@@ -1,8 +1,32 @@
-.timeline {
-  position: relative;
-  height: 60px;
+.timelineContainer {
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-default);
+}
+
+.timelineHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  border-bottom: 1px dashed var(--border-default);
+}
+
+.timelineIcon {
+  color: var(--zone-cleared);
+  font-size: 0.6rem;
+}
+
+.timelineTitle {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.2em;
+}
+
+.timeline {
+  position: relative;
+  height: 56px;
   overflow: hidden;
   z-index: var(--z-timeline);
 }
@@ -30,6 +54,7 @@
   font-size: 0.55rem;
   color: var(--text-muted);
   padding-top: 2px;
+  white-space: nowrap;
 }
 
 .markerLine {
@@ -42,7 +67,7 @@
 /* タスクブロック */
 .blocks {
   position: absolute;
-  top: 20px;
+  top: 18px;
   left: 0;
   right: 0;
   bottom: 4px;
@@ -58,6 +83,7 @@
   display: flex;
   align-items: center;
   padding: 0 4px;
+  gap: 3px;
   overflow: hidden;
   transition: background var(--transition-fast);
 }
@@ -66,9 +92,14 @@
   background: color-mix(in srgb, var(--block-color) 35%, transparent);
 }
 
+.blockDot {
+  font-size: 0.4rem;
+  color: var(--block-color);
+}
+
 .blockLabel {
   font-family: var(--font-mono);
-  font-size: 0.55rem;
+  font-size: 0.5rem;
   color: var(--text-secondary);
   white-space: nowrap;
 }

@@ -25,16 +25,30 @@ const mockTasks: Task[] = [
 describe('Zone', () => {
   it('should display zone title', () => {
     render(
-      <Zone zone="NEXT_ACTION" title="NEXT ACTION" tasks={mockTasks} maxTasks={5} onComplete={vi.fn()} />
+      <Zone zone="NEXT_ACTION" title="NEXT ACTION" subtitle="次のアクション" icon="→" tasks={mockTasks} maxTasks={5} onComplete={vi.fn()} />
     )
     expect(screen.getByText('NEXT ACTION')).toBeInTheDocument()
+  })
+
+  it('should display icon', () => {
+    render(
+      <Zone zone="NEXT_ACTION" title="NEXT ACTION" icon="→" tasks={mockTasks} maxTasks={5} onComplete={vi.fn()} />
+    )
+    expect(screen.getByText('→')).toBeInTheDocument()
+  })
+
+  it('should display subtitle', () => {
+    render(
+      <Zone zone="NEXT_ACTION" title="NEXT ACTION" subtitle="次のアクション" icon="→" tasks={mockTasks} maxTasks={5} onComplete={vi.fn()} />
+    )
+    expect(screen.getByText('次のアクション')).toBeInTheDocument()
   })
 
   it('should display task count with limit', () => {
     render(
       <Zone zone="NEXT_ACTION" title="NEXT ACTION" tasks={mockTasks} maxTasks={5} onComplete={vi.fn()} />
     )
-    expect(screen.getByText('2 / 5')).toBeInTheDocument()
+    expect(screen.getByText('2/5')).toBeInTheDocument()
   })
 
   it('should display task count without limit when Infinity', () => {

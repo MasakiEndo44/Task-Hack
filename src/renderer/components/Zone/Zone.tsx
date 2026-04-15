@@ -12,17 +12,22 @@ import styles from './Zone.module.css'
 interface ZoneProps {
   zone: ZoneType
   title: string
+  subtitle?: string
+  icon?: string
   tasks: Task[]
   maxTasks: number
   onComplete: (taskId: string) => void
+  onUndo?: (taskId: string) => void
 }
 
 function SortableFlightStrip({
   task,
-  onComplete
+  onComplete,
+  onUndo
 }: {
   task: Task
   onComplete: (taskId: string) => void
+  onUndo?: (taskId: string) => void
 }) {
   const {
     attributes,
@@ -40,17 +45,17 @@ function SortableFlightStrip({
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <FlightStrip task={task} onComplete={onComplete} isDragging={isDragging} />
+      <FlightStrip task={task} onComplete={onComplete} onUndo={onUndo} isDragging={isDragging} />
     </div>
   )
 }
 
-export function Zone({ zone, title, tasks, maxTasks, onComplete }: ZoneProps) {
+export function Zone({ zone, title, subtitle, icon, tasks, maxTasks, onComplete, onUndo }: ZoneProps) {
   const { setNodeRef, isOver } = useDroppable({ id: zone })
   const isFull = maxTasks !== Infinity && tasks.length >= maxTasks
   const countDisplay = maxTasks === Infinity
     ? `${tasks.length}`
-    : `${tasks.length} / ${maxTasks}`
+    : `${tasks.length}/${maxTasks}`
 
   return (
     <div
@@ -59,7 +64,14 @@ export function Zone({ zone, title, tasks, maxTasks, onComplete }: ZoneProps) {
       data-testid={`zone-${zone}`}
     >
       <div className={styles.header}>
-        <h2 className={styles.title}>{title}</h2>
+        <div className={styles.headerLeft}>
+          {icon && <span className={styles.icon}>{icon}</span>}
+          <h2 className={styles.title}>{title}</h2>
+          {subtitle && <span className={styles.subtitle}>{subtitle}</span>}
+          {maxTasks !== Infinity && (
+            <span className={styles.maxLabel}>max {maxTasks}</span>
+          )}
+        </div>
         <span className={styles.count}>{countDisplay}</span>
       </div>
       <SortableContext
@@ -77,6 +89,7 @@ export function Zone({ zone, title, tasks, maxTasks, onComplete }: ZoneProps) {
                 key={task.id}
                 task={task}
                 onComplete={onComplete}
+                onUndo={onUndo}
               />
             ))
           )}

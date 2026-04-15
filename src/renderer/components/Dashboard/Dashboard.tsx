@@ -18,10 +18,11 @@ import styles from './Dashboard.module.css'
 interface DashboardProps {
   tasksByZone: Record<ZoneType, Task[]>
   onComplete: (taskId: string) => void
+  onUndoComplete: (taskId: string) => void
   onMoveTask: (taskId: string, toZone: ZoneType, toIndex: number) => void
 }
 
-export function Dashboard({ tasksByZone, onComplete, onMoveTask }: DashboardProps) {
+export function Dashboard({ tasksByZone, onComplete, onUndoComplete, onMoveTask }: DashboardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
 
   const sensors = useSensors(
@@ -47,12 +48,10 @@ export function Dashboard({ tasksByZone, onComplete, onMoveTask }: DashboardProp
     let toZone: ZoneType
     let toIndex = 0
 
-    // overがゾーンIDの場合
     if (['ACTIVE', 'NEXT_ACTION', 'HOLDING', 'CLEARED'].includes(over.id as string)) {
       toZone = over.id as ZoneType
       toIndex = tasksByZone[toZone].length
     } else {
-      // overが他のタスクIDの場合 — そのタスクのゾーンに移動
       const allTasks = Object.values(tasksByZone).flat()
       const overTask = allTasks.find(t => t.id === over.id)
       if (!overTask) return
@@ -71,12 +70,14 @@ export function Dashboard({ tasksByZone, onComplete, onMoveTask }: DashboardProp
       onDragEnd={handleDragEnd}
     >
       <div className={styles.dashboard}>
-        {/* 上段: ACTIVE（左・大きく） + NEXT ACTION（右） */}
-        <div className={styles.topRow}>
+        {/* 左列: ACTIVE + NEXT ACTION（縦積み） */}
+        <div className={styles.leftColumn}>
           <div className={styles.activeZone}>
             <Zone
               zone="ACTIVE"
               title="ACTIVE"
+              subtitle="進行中"
+              icon="▶"
               tasks={tasksByZone.ACTIVE}
               maxTasks={ZONE_LIMITS.ACTIVE}
               onComplete={onComplete}
@@ -86,6 +87,8 @@ export function Dashboard({ tasksByZone, onComplete, onMoveTask }: DashboardProp
             <Zone
               zone="NEXT_ACTION"
               title="NEXT ACTION"
+              subtitle="次のアクション"
+              icon="→"
               tasks={tasksByZone.NEXT_ACTION}
               maxTasks={ZONE_LIMITS.NEXT_ACTION}
               onComplete={onComplete}
@@ -93,30 +96,34 @@ export function Dashboard({ tasksByZone, onComplete, onMoveTask }: DashboardProp
           </div>
         </div>
 
-        {/* 下段: HOLDING（左） + CLEARED（右） */}
-        <div className={styles.bottomRow}>
-          <div className={styles.holdingZone}>
-            <Zone
-              zone="HOLDING"
-              title="HOLDING"
-              tasks={tasksByZone.HOLDING}
-              maxTasks={ZONE_LIMITS.HOLDING}
-              onComplete={onComplete}
-            />
-          </div>
-          <div className={styles.clearedZone}>
-            <Zone
-              zone="CLEARED"
-              title="CLEARED"
-              tasks={tasksByZone.CLEARED}
-              maxTasks={ZONE_LIMITS.CLEARED}
-              onComplete={onComplete}
-            />
-          </div>
+        {/* 中央列: HOLDING */}
+        <div className={styles.holdingZone}>
+          <Zone
+            zone="HOLDING"
+            title="HOLDING"
+            subtitle="待機中"
+            icon="‖"
+            tasks={tasksByZone.HOLDING}
+            maxTasks={ZONE_LIMITS.HOLDING}
+            onComplete={onComplete}
+          />
+        </div>
+
+        {/* 右列: CLEARED */}
+        <div className={styles.clearedZone}>
+          <Zone
+            zone="CLEARED"
+            title="CLEARED"
+            subtitle="完了"
+            icon="✓"
+            tasks={tasksByZone.CLEARED}
+            maxTasks={ZONE_LIMITS.CLEARED}
+            onComplete={onComplete}
+            onUndo={onUndoComplete}
+          />
         </div>
       </div>
 
-      {/* ドラッグ時のオーバーレイ */}
       <DragOverlay>
         {activeTask ? (
           <FlightStrip task={activeTask} onComplete={() => {}} isDragging />

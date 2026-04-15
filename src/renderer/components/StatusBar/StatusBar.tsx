@@ -20,6 +20,10 @@ export function StatusBar({ zoneCounts }: StatusBarProps) {
 
   return (
     <div className={styles.statusBar} role="status" aria-label="タスクステータス">
+      <div className={styles.appTitle}>
+        <span className={styles.appIcon}>◆</span>
+        <span className={styles.appName}>FLIGHT STRIP TODO</span>
+      </div>
       <div className={styles.zones}>
         {ZONE_LABELS.map(({ zone, label, cssVar }) => (
           <div
@@ -27,18 +31,19 @@ export function StatusBar({ zoneCounts }: StatusBarProps) {
             className={styles.zoneIndicator}
             style={{ '--indicator-color': `var(${cssVar})` } as React.CSSProperties}
           >
-            <span className={styles.zoneLabel}>{label}</span>
+            <span className={styles.zoneLabel}>{label}:</span>
             <span className={styles.zoneCount} data-testid={`count-${zone}`}>
               {zoneCounts[zone].total}
             </span>
           </div>
         ))}
-      </div>
-      <div className={styles.urgentIndicator}>
-        <span className={styles.urgentLabel}>URG</span>
-        <span className={styles.urgentCount} data-testid="count-urgent">
-          {totalUrgent}
-        </span>
+        <span className={styles.separator}>·</span>
+        <div className={styles.urgentIndicator}>
+          <span className={styles.urgentLabel}>URG:</span>
+          <span className={styles.urgentCount} data-testid="count-urgent">
+            {totalUrgent}
+          </span>
+        </div>
       </div>
     </div>
   )

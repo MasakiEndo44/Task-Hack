@@ -46,7 +46,7 @@ describe('FlightStrip', () => {
     expect(screen.getByText('daily')).toBeInTheDocument()
   })
 
-  it('should call onComplete when complete button is clicked', () => {
+  it('should call onComplete when DONE button is clicked', () => {
     const onComplete = vi.fn()
     render(<FlightStrip task={mockTask} onComplete={onComplete} />)
     fireEvent.click(screen.getByRole('button', { name: /完了/i }))
@@ -56,5 +56,13 @@ describe('FlightStrip', () => {
   it('should have the correct data-testid', () => {
     render(<FlightStrip task={mockTask} onComplete={vi.fn()} />)
     expect(screen.getByTestId('flight-strip-FS1234')).toBeInTheDocument()
+  })
+
+  it('should show UNDO button for CLEARED zone tasks', () => {
+    const clearedTask = { ...mockTask, zone: 'CLEARED' as const }
+    const onUndo = vi.fn()
+    render(<FlightStrip task={clearedTask} onComplete={vi.fn()} onUndo={onUndo} />)
+    fireEvent.click(screen.getByRole('button', { name: /元に戻す/i }))
+    expect(onUndo).toHaveBeenCalledWith('FS1234')
   })
 })

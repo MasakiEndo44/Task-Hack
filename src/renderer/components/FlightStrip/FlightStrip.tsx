@@ -4,6 +4,7 @@ import styles from './FlightStrip.module.css'
 interface FlightStripProps {
   task: Task
   onComplete: (taskId: string) => void
+  onUndo?: (taskId: string) => void
   isDragging?: boolean
 }
 
@@ -17,44 +18,57 @@ function formatScheduledTime(iso?: string): string | null {
   })
 }
 
-export function FlightStrip({ task, onComplete, isDragging = false }: FlightStripProps) {
+export function FlightStrip({ task, onComplete, onUndo, isDragging = false }: FlightStripProps) {
   const scheduledTime = formatScheduledTime(task.scheduledStart)
   const isUrgent = task.priority === 'URG'
+  const isCleared = task.zone === 'CLEARED'
 
   return (
     <div
       className={`${styles.strip} ${styles[task.zone.toLowerCase()]} ${isDragging ? styles.dragging : ''}`}
       data-testid={`flight-strip-${task.id}`}
     >
-      {/* 左: フライトID */}
-      <div className={styles.idSection}>
+      {/* 上段: フライトID + 時刻 + 優先度バッジ */}
+      <div className={styles.topRow}>
         <span className={styles.flightId}>{task.id}</span>
         {scheduledTime && (
           <span className={styles.time}>{scheduledTime}</span>
         )}
-      </div>
-
-      {/* 中央: タイトル + カテゴリ */}
-      <div className={styles.infoSection}>
-        <span className={styles.title}>{task.title}</span>
-        {task.category && (
-          <span className={styles.category}>{task.category}</span>
-        )}
-      </div>
-
-      {/* 右: 優先度バッジ + 完了ボタン */}
-      <div className={styles.actionSection}>
         <span className={`${styles.priorityBadge} ${isUrgent ? styles.urgent : styles.normal}`}>
           {task.priority}
         </span>
-        <button
-          className={styles.completeButton}
-          onClick={() => onComplete(task.id)}
-          aria-label="完了"
-          title="タスクを完了する"
-        >
-          ✓
-        </button>
+      </div>
+
+      {/* 下段: タイトル + カテゴリ + DONE/UNDO */}
+      <div className={styles.bottomRow}>
+        <div className={styles.infoSection}>
+          <span className={styles.title}>{task.title}</span>
+          {task.category && (
+            <span className={styles.category}>{task.category}</span>
+          )}
+        </div>
+
+        {isCleared && onUndo ? (
+          <button
+            className={styles.undoButton}
+            onClick={() => onUndo(task.id)}
+            aria-label="元に戻す"
+            title="完了を取り消す"
+          >
+            <span className={styles.undoIcon}>↩</span>
+            <span className={styles.undoText}>UNDO</span>
+          </button>
+        ) : (
+          <button
+            className={styles.completeButton}
+            onClick={() => onComplete(task.id)}
+            aria-label="完了"
+            title="タスクを完了する"
+          >
+            <span className={styles.doneIcon}>✓</span>
+            <span className={styles.doneText}>DONE</span>
+          </button>
+        )}
       </div>
     </div>
   )

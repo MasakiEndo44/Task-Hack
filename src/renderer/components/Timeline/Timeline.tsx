@@ -38,59 +38,66 @@ export function Timeline({ tasks }: TimelineProps) {
   )
 
   return (
-    <div className={styles.timeline} data-testid="timeline">
-      {/* 時間マーカー */}
-      <div className={styles.markers}>
-        {hourMarkers.map(hour => (
-          <div
-            key={hour}
-            className={styles.marker}
-            style={{ left: `${((hour - TIMELINE_START_HOUR) / TOTAL_HOURS) * 100}%` }}
-          >
-            <span className={styles.markerLabel}>
-              {hour.toString().padStart(2, '0')}
-            </span>
-            <div className={styles.markerLine} />
-          </div>
-        ))}
+    <div className={styles.timelineContainer}>
+      <div className={styles.timelineHeader}>
+        <span className={styles.timelineIcon}>◆</span>
+        <span className={styles.timelineTitle}>TIMELINE</span>
       </div>
-
-      {/* タスクブロック */}
-      <div className={styles.blocks}>
-        {scheduledTasks.map(task => {
-          const start = new Date(task.scheduledStart!)
-          const end = task.scheduledEnd
-            ? new Date(task.scheduledEnd)
-            : new Date(start.getTime() + 3600000) // デフォルト1時間
-          const leftPercent = timeToPercent(start)
-          const rightPercent = timeToPercent(end)
-          const widthPercent = rightPercent - leftPercent
-
-          return (
+      <div className={styles.timeline} data-testid="timeline">
+        {/* 時間マーカー */}
+        <div className={styles.markers}>
+          {hourMarkers.map(hour => (
             <div
-              key={task.id}
-              className={styles.block}
-              data-testid={`timeline-block-${task.id}`}
-              style={{
-                left: `${leftPercent}%`,
-                width: `${Math.max(widthPercent, 1)}%`,
-                '--block-color': ZONE_COLORS[task.zone] || 'var(--text-muted)'
-              } as React.CSSProperties}
-              title={`${task.id}: ${task.title}`}
+              key={hour}
+              className={styles.marker}
+              style={{ left: `${((hour - TIMELINE_START_HOUR) / TOTAL_HOURS) * 100}%` }}
             >
-              <span className={styles.blockLabel}>{task.id}</span>
+              <span className={styles.markerLabel}>
+                {hour.toString().padStart(2, '0')}:00
+              </span>
+              <div className={styles.markerLine} />
             </div>
-          )
-        })}
-      </div>
+          ))}
+        </div>
 
-      {/* スイープライン（現在時刻） */}
-      <div
-        className={styles.sweepLine}
-        data-testid="sweep-line"
-        style={{ left: `${sweepPercent}%` }}
-      >
-        <div className={styles.sweepDot} />
+        {/* タスクブロック */}
+        <div className={styles.blocks}>
+          {scheduledTasks.map(task => {
+            const start = new Date(task.scheduledStart!)
+            const end = task.scheduledEnd
+              ? new Date(task.scheduledEnd)
+              : new Date(start.getTime() + 3600000)
+            const leftPercent = timeToPercent(start)
+            const rightPercent = timeToPercent(end)
+            const widthPercent = rightPercent - leftPercent
+
+            return (
+              <div
+                key={task.id}
+                className={styles.block}
+                data-testid={`timeline-block-${task.id}`}
+                style={{
+                  left: `${leftPercent}%`,
+                  width: `${Math.max(widthPercent, 1.5)}%`,
+                  '--block-color': ZONE_COLORS[task.zone] || 'var(--text-muted)'
+                } as React.CSSProperties}
+                title={`${task.id}: ${task.title}`}
+              >
+                <span className={styles.blockDot}>●</span>
+                <span className={styles.blockLabel}>{task.id}</span>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* スイープライン（現在時刻） */}
+        <div
+          className={styles.sweepLine}
+          data-testid="sweep-line"
+          style={{ left: `${sweepPercent}%` }}
+        >
+          <div className={styles.sweepDot} />
+        </div>
       </div>
     </div>
   )

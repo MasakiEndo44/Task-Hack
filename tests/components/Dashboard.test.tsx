@@ -40,7 +40,7 @@ const mockTasksByZone: Record<ZoneType, Task[]> = {
 describe('Dashboard', () => {
   it('should render all four zones', () => {
     render(
-      <Dashboard tasksByZone={mockTasksByZone} onComplete={vi.fn()} onMoveTask={vi.fn()} />
+      <Dashboard tasksByZone={mockTasksByZone} onComplete={vi.fn()} onUndoComplete={vi.fn()} onMoveTask={vi.fn()} />
     )
     expect(screen.getByTestId('zone-ACTIVE')).toBeInTheDocument()
     expect(screen.getByTestId('zone-NEXT_ACTION')).toBeInTheDocument()
@@ -50,7 +50,7 @@ describe('Dashboard', () => {
 
   it('should display zone titles', () => {
     render(
-      <Dashboard tasksByZone={mockTasksByZone} onComplete={vi.fn()} onMoveTask={vi.fn()} />
+      <Dashboard tasksByZone={mockTasksByZone} onComplete={vi.fn()} onUndoComplete={vi.fn()} onMoveTask={vi.fn()} />
     )
     expect(screen.getByText('ACTIVE')).toBeInTheDocument()
     expect(screen.getByText('NEXT ACTION')).toBeInTheDocument()
@@ -60,7 +60,7 @@ describe('Dashboard', () => {
 
   it('should render flight strips in correct zones', () => {
     render(
-      <Dashboard tasksByZone={mockTasksByZone} onComplete={vi.fn()} onMoveTask={vi.fn()} />
+      <Dashboard tasksByZone={mockTasksByZone} onComplete={vi.fn()} onUndoComplete={vi.fn()} onMoveTask={vi.fn()} />
     )
     expect(screen.getByTestId('flight-strip-FS0001')).toBeInTheDocument()
     expect(screen.getByTestId('flight-strip-FS0002')).toBeInTheDocument()

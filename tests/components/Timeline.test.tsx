@@ -27,13 +27,21 @@ const mockTasks: Task[] = [
 ]
 
 describe('Timeline', () => {
-  it('should render time markers for business hours', () => {
+  it('should render time markers in HH:00 format', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-04-16T10:00:00'))
     render(<Timeline tasks={mockTasks} />)
-    expect(screen.getByText('06')).toBeInTheDocument()
-    expect(screen.getByText('12')).toBeInTheDocument()
-    expect(screen.getByText('18')).toBeInTheDocument()
+    expect(screen.getByText('06:00')).toBeInTheDocument()
+    expect(screen.getByText('12:00')).toBeInTheDocument()
+    expect(screen.getByText('18:00')).toBeInTheDocument()
+    vi.useRealTimers()
+  })
+
+  it('should render the TIMELINE header', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-16T10:00:00'))
+    render(<Timeline tasks={mockTasks} />)
+    expect(screen.getByText('TIMELINE')).toBeInTheDocument()
     vi.useRealTimers()
   })
 

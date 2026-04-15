@@ -28,15 +28,15 @@
 }
 
 .next_action {
-  border-top: 2px solid var(--zone-next);
+  border-color: var(--zone-next);
 }
 
 .holding {
-  border-top: 2px solid var(--zone-holding);
+  border-color: var(--zone-holding);
 }
 
 .cleared {
-  border-top: 2px solid var(--zone-cleared);
+  border-color: var(--zone-cleared);
 }
 
 .header {
@@ -48,19 +48,47 @@
   background: rgba(0, 0, 0, 0.2);
 }
 
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.icon {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
 .title {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
   letter-spacing: 0.15em;
   text-transform: uppercase;
 }
 
+.subtitle {
+  font-family: var(--font-ui);
+  font-size: 0.6rem;
+  color: var(--text-muted);
+}
+
+.maxLabel {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  color: var(--text-muted);
+}
+
 .count {
   font-family: var(--font-mono);
-  font-size: 0.65rem;
-  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 8px;
+  border-radius: 10px;
 }
 
 .taskList {

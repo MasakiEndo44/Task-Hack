@@ -90,6 +90,10 @@ function App(): React.JSX.Element {
     dispatch({ type: 'COMPLETE_TASK', payload: { taskId } })
   }, [dispatch])
 
+  const handleUndoComplete = useCallback((taskId: string) => {
+    dispatch({ type: 'UNDO_COMPLETE', payload: { taskId } })
+  }, [dispatch])
+
   const handleMoveTask = useCallback((taskId: string, toZone: ZoneType, toIndex: number) => {
     dispatch({ type: 'MOVE_TASK', payload: { taskId, toZone, toIndex } })
   }, [dispatch])
@@ -112,6 +116,7 @@ function App(): React.JSX.Element {
         <Dashboard
           tasksByZone={getTasksByZone()}
           onComplete={handleComplete}
+          onUndoComplete={handleUndoComplete}
           onMoveTask={handleMoveTask}
         />
       </main>

@@ -9,6 +9,7 @@ type TaskAction =
   | { type: 'ADD_TASK'; payload: TaskInput }
   | { type: 'MOVE_TASK'; payload: { taskId: string; toZone: ZoneType; toIndex: number } }
   | { type: 'COMPLETE_TASK'; payload: { taskId: string } }
+  | { type: 'UNDO_COMPLETE'; payload: { taskId: string } }
   | { type: 'UPDATE_TASK'; payload: { taskId: string; updates: Partial<Task> } }
   | { type: 'DELETE_TASK'; payload: { taskId: string } }
 
@@ -76,6 +77,20 @@ function taskReducer(state: Task[], action: TaskAction): Task[] {
       const { taskId, updates } = action.payload
       return state.map(t =>
         t.id === taskId ? { ...t, ...updates } : t
+      )
+    }
+
+    case 'UNDO_COMPLETE': {
+      const { taskId } = action.payload
+      return state.map(t =>
+        t.id === taskId
+          ? {
+              ...t,
+              zone: 'HOLDING' as ZoneType,
+              completedAt: undefined,
+              order: state.filter(tk => tk.zone === 'HOLDING').length
+            }
+          : t
       )
     }
 
