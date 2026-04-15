@@ -1,0 +1,105 @@
+.timeline {
+  position: relative;
+  height: 60px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-default);
+  overflow: hidden;
+  z-index: var(--z-timeline);
+}
+
+/* 時間マーカー */
+.markers {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.markerLabel {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  color: var(--text-muted);
+  padding-top: 2px;
+}
+
+.markerLine {
+  width: 1px;
+  flex: 1;
+  background: var(--border-default);
+  opacity: 0.5;
+}
+
+/* タスクブロック */
+.blocks {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  right: 0;
+  bottom: 4px;
+}
+
+.block {
+  position: absolute;
+  top: 4px;
+  height: calc(100% - 8px);
+  background: color-mix(in srgb, var(--block-color) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--block-color) 50%, transparent);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  overflow: hidden;
+  transition: background var(--transition-fast);
+}
+
+.block:hover {
+  background: color-mix(in srgb, var(--block-color) 35%, transparent);
+}
+
+.blockLabel {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* スイープライン */
+.sweepLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--sweep-line);
+  box-shadow:
+    0 0 8px var(--glow-green),
+    0 0 16px rgba(16, 185, 129, 0.3);
+  z-index: 2;
+  pointer-events: none;
+  animation: sweepGlow 2s ease-in-out infinite;
+}
+
+.sweepDot {
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  width: 8px;
+  height: 8px;
+  background: var(--sweep-line);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--glow-green);
+}
+
+@keyframes sweepGlow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}

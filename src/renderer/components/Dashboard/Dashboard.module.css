@@ -1,0 +1,39 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  flex: 1;
+  overflow: hidden;
+}
+
+.topRow {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: var(--space-md);
+  flex: 1;
+  min-height: 0;
+}
+
+.bottomRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+  flex: 1;
+  min-height: 0;
+}
+
+.activeZone,
+.nextZone,
+.holdingZone,
+.clearedZone {
+  display: flex;
+  min-height: 0;
+}
+
+.activeZone > *,
+.nextZone > *,
+.holdingZone > *,
+.clearedZone > * {
+  flex: 1;
+}
