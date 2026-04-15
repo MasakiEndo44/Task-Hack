@@ -1,0 +1,154 @@
+.strip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-left: 3px solid var(--border-default);
+  border-radius: var(--radius-md);
+  cursor: grab;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+  user-select: none;
+}
+
+.strip:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-hover);
+}
+
+/* ゾーン別のアクセントカラー */
+.active {
+  border-left-color: var(--zone-active);
+  box-shadow: inset 0 0 20px var(--zone-active-glow);
+}
+
+.next_action {
+  border-left-color: var(--zone-next);
+}
+
+.holding {
+  border-left-color: var(--zone-holding);
+  opacity: 0.85;
+}
+
+.cleared {
+  border-left-color: var(--zone-cleared);
+  opacity: 0.6;
+}
+
+.dragging {
+  opacity: 0.5;
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  cursor: grabbing;
+}
+
+/* フライトIDセクション */
+.idSection {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 64px;
+}
+
+.flightId {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+}
+
+.time {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+/* タスク情報セクション */
+.infoSection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.category {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* アクションセクション */
+.actionSection {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.priorityBadge {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.1em;
+}
+
+.urgent {
+  background: rgba(255, 59, 59, 0.2);
+  color: var(--priority-urgent);
+  border: 1px solid rgba(255, 59, 59, 0.4);
+  animation: urgentPulse 2s ease-in-out infinite;
+}
+
+.normal {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--priority-normal);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+@keyframes urgentPulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(255, 59, 59, 0.3); }
+  50% { box-shadow: 0 0 12px rgba(255, 59, 59, 0.6); }
+}
+
+.completeButton {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-default);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.completeButton:hover {
+  color: var(--zone-cleared);
+  border-color: var(--zone-cleared);
+  background: rgba(16, 185, 129, 0.1);
+}

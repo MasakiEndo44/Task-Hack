@@ -1,0 +1,63 @@
+.statusBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-xs) var(--space-md);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-default);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  z-index: var(--z-status-bar);
+}
+
+.zones {
+  display: flex;
+  gap: var(--space-md);
+}
+
+.zoneIndicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.zoneLabel {
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+}
+
+.zoneCount {
+  color: var(--indicator-color);
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-shadow: 0 0 8px var(--indicator-color);
+  min-width: 1.2em;
+  text-align: center;
+}
+
+.urgentIndicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 2px var(--space-sm);
+  background: rgba(255, 59, 59, 0.1);
+  border: 1px solid rgba(255, 59, 59, 0.3);
+  border-radius: var(--radius-sm);
+}
+
+.urgentLabel {
+  color: var(--priority-urgent);
+  font-weight: 600;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+}
+
+.urgentCount {
+  color: var(--priority-urgent);
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-shadow: 0 0 8px rgba(255, 59, 59, 0.5);
+}
