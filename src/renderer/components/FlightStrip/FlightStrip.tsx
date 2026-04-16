@@ -5,6 +5,7 @@ interface FlightStripProps {
   task: Task
   onComplete: (taskId: string) => void
   onUndo?: (taskId: string) => void
+  onClick?: (taskId: string) => void
   isDragging?: boolean
 }
 
@@ -18,7 +19,7 @@ function formatScheduledTime(iso?: string): string | null {
   })
 }
 
-export function FlightStrip({ task, onComplete, onUndo, isDragging = false }: FlightStripProps) {
+export function FlightStrip({ task, onComplete, onUndo, onClick, isDragging = false }: FlightStripProps) {
   const scheduledTime = formatScheduledTime(task.scheduledStart)
   const isUrgent = task.priority === 'URG'
   const isCleared = task.zone === 'CLEARED'
@@ -27,6 +28,7 @@ export function FlightStrip({ task, onComplete, onUndo, isDragging = false }: Fl
     <div
       className={`${styles.strip} ${styles[task.zone.toLowerCase()]} ${isDragging ? styles.dragging : ''}`}
       data-testid={`flight-strip-${task.id}`}
+      onClick={() => onClick?.(task.id)}
     >
       {/* 上段: フライトID + 時刻 + 優先度バッジ */}
       <div className={styles.topRow}>
@@ -51,7 +53,10 @@ export function FlightStrip({ task, onComplete, onUndo, isDragging = false }: Fl
         {isCleared && onUndo ? (
           <button
             className={styles.undoButton}
-            onClick={() => onUndo(task.id)}
+            onClick={(e) => {
+              e.stopPropagation()
+              onUndo(task.id)
+            }}
             aria-label="元に戻す"
             title="完了を取り消す"
           >
@@ -61,7 +66,10 @@ export function FlightStrip({ task, onComplete, onUndo, isDragging = false }: Fl
         ) : (
           <button
             className={styles.completeButton}
-            onClick={() => onComplete(task.id)}
+            onClick={(e) => {
+              e.stopPropagation()
+              onComplete(task.id)
+            }}
             aria-label="完了"
             title="タスクを完了する"
           >

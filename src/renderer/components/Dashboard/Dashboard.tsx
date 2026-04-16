@@ -20,9 +20,10 @@ interface DashboardProps {
   onComplete: (taskId: string) => void
   onUndoComplete: (taskId: string) => void
   onMoveTask: (taskId: string, toZone: ZoneType, toIndex: number) => void
+  onClickTask?: (taskId: string) => void
 }
 
-export function Dashboard({ tasksByZone, onComplete, onUndoComplete, onMoveTask }: DashboardProps) {
+export function Dashboard({ tasksByZone, onComplete, onUndoComplete, onMoveTask, onClickTask }: DashboardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
 
   const sensors = useSensors(
@@ -81,6 +82,7 @@ export function Dashboard({ tasksByZone, onComplete, onUndoComplete, onMoveTask 
               tasks={tasksByZone.ACTIVE}
               maxTasks={ZONE_LIMITS.ACTIVE}
               onComplete={onComplete}
+              onClickTask={onClickTask}
             />
           </div>
           <div className={styles.nextZone}>
@@ -92,6 +94,7 @@ export function Dashboard({ tasksByZone, onComplete, onUndoComplete, onMoveTask 
               tasks={tasksByZone.NEXT_ACTION}
               maxTasks={ZONE_LIMITS.NEXT_ACTION}
               onComplete={onComplete}
+              onClickTask={onClickTask}
             />
           </div>
         </div>
@@ -106,6 +109,7 @@ export function Dashboard({ tasksByZone, onComplete, onUndoComplete, onMoveTask 
             tasks={tasksByZone.HOLDING}
             maxTasks={ZONE_LIMITS.HOLDING}
             onComplete={onComplete}
+            onClickTask={onClickTask}
           />
         </div>
 
@@ -120,13 +124,14 @@ export function Dashboard({ tasksByZone, onComplete, onUndoComplete, onMoveTask 
             maxTasks={ZONE_LIMITS.CLEARED}
             onComplete={onComplete}
             onUndo={onUndoComplete}
+            onClickTask={onClickTask}
           />
         </div>
       </div>
 
       <DragOverlay>
         {activeTask ? (
-          <FlightStrip task={activeTask} onComplete={() => {}} isDragging />
+          <FlightStrip task={activeTask} onComplete={() => {}} onClick={onClickTask} isDragging />
         ) : null}
       </DragOverlay>
     </DndContext>

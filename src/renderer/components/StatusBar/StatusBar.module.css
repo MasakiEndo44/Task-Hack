@@ -67,8 +67,8 @@
   align-items: center;
   gap: 2px;
   padding: 1px 6px;
-  background: rgba(255, 59, 59, 0.1);
-  border: 1px solid rgba(255, 59, 59, 0.3);
+  background: rgba(89, 235, 238, 0.1);
+  border: 1px solid rgba(89, 235, 238, 0.3);
   border-radius: var(--radius-sm);
 }
 
@@ -82,5 +82,5 @@
   color: var(--priority-urgent);
   font-weight: 700;
   font-size: 0.8rem;
-  text-shadow: 0 0 8px rgba(255, 59, 59, 0.5);
+  text-shadow: 0 0 8px rgba(89, 235, 238, 0.5);
 }

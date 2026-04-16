@@ -12,6 +12,6 @@
   color: var(--glow-green);
   text-shadow:
     0 0 10px var(--glow-green),
-    0 0 20px rgba(16, 185, 129, 0.2);
+    0 0 20px rgba(89, 238, 166, 0.2);
   letter-spacing: 0.1em;
 }

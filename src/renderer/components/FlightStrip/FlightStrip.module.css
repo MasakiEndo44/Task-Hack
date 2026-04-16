@@ -24,18 +24,18 @@
 .active {
   background: linear-gradient(
     180deg,
-    rgba(16, 185, 129, 0.15) 0%,
-    rgba(16, 185, 129, 0.05) 100%
+    rgba(43, 233, 46, 0.15) 0%,
+    rgba(43, 233, 46, 0.05) 100%
   );
   border-color: var(--zone-cleared);
-  box-shadow: inset 0 0 20px rgba(16, 185, 129, 0.1);
+  box-shadow: inset 0 0 20px rgba(43, 233, 46, 0.1);
 }
 
 .active:hover {
   background: linear-gradient(
     180deg,
-    rgba(16, 185, 129, 0.25) 0%,
-    rgba(16, 185, 129, 0.1) 100%
+    rgba(43, 233, 46, 0.25) 0%,
+    rgba(43, 233, 46, 0.1) 100%
   );
 }
 
@@ -92,21 +92,28 @@
 }
 
 .urgent {
-  background: rgba(255, 59, 59, 0.2);
+  background: rgba(89, 235, 238, 0.2);
   color: var(--priority-urgent);
-  border: 1px solid rgba(255, 59, 59, 0.4);
+  border: 1px solid rgba(89, 235, 238, 0.4);
   animation: urgentPulse 2s ease-in-out infinite;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .urgent {
+    animation: none;
+    box-shadow: 0 0 8px rgba(89, 235, 238, 0.4);
+  }
+}
+
 .normal {
-  background: rgba(59, 130, 246, 0.15);
+  background: rgba(137, 135, 242, 0.15);
   color: var(--priority-normal);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(137, 135, 242, 0.3);
 }
 
 @keyframes urgentPulse {
-  0%, 100% { box-shadow: 0 0 4px rgba(255, 59, 59, 0.3); }
-  50% { box-shadow: 0 0 12px rgba(255, 59, 59, 0.6); }
+  0%, 100% { box-shadow: 0 0 4px rgba(89, 235, 238, 0.3); }
+  50% { box-shadow: 0 0 12px rgba(89, 235, 238, 0.6); }
 }
 
 /* 下段: タイトル + カテゴリ + DONE/UNDO */
@@ -159,7 +166,7 @@
 
 .completeButton:hover {
   color: var(--zone-cleared);
-  background: rgba(16, 185, 129, 0.1);
+  background: rgba(43, 233, 46, 0.1);
 }
 
 .doneIcon {
@@ -193,7 +200,7 @@
 
 .undoButton:hover {
   color: var(--zone-next);
-  background: rgba(251, 191, 36, 0.1);
+  background: rgba(89, 161, 238, 0.1);
 }
 
 .undoIcon {

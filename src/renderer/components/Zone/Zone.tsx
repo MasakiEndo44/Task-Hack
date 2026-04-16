@@ -18,16 +18,19 @@ interface ZoneProps {
   maxTasks: number
   onComplete: (taskId: string) => void
   onUndo?: (taskId: string) => void
+  onClickTask?: (taskId: string) => void
 }
 
 function SortableFlightStrip({
   task,
   onComplete,
-  onUndo
+  onUndo,
+  onClick
 }: {
   task: Task
   onComplete: (taskId: string) => void
   onUndo?: (taskId: string) => void
+  onClick?: (taskId: string) => void
 }) {
   const {
     attributes,
@@ -45,12 +48,12 @@ function SortableFlightStrip({
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <FlightStrip task={task} onComplete={onComplete} onUndo={onUndo} isDragging={isDragging} />
+      <FlightStrip task={task} onComplete={onComplete} onUndo={onUndo} onClick={onClick} isDragging={isDragging} />
     </div>
   )
 }
 
-export function Zone({ zone, title, subtitle, icon, tasks, maxTasks, onComplete, onUndo }: ZoneProps) {
+export function Zone({ zone, title, subtitle, icon, tasks, maxTasks, onComplete, onUndo, onClickTask }: ZoneProps) {
   const { setNodeRef, isOver } = useDroppable({ id: zone })
   const isFull = maxTasks !== Infinity && tasks.length >= maxTasks
   const countDisplay = maxTasks === Infinity
@@ -90,6 +93,7 @@ export function Zone({ zone, title, subtitle, icon, tasks, maxTasks, onComplete,
                 task={task}
                 onComplete={onComplete}
                 onUndo={onUndo}
+                onClick={onClickTask}
               />
             ))
           )}
