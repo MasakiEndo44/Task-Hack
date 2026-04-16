@@ -11,19 +11,53 @@ export function TaskDetail({ task, onUpdate }: TaskDetailProps) {
   const [estimatedTime, setEstimatedTime] = useState(task.estimatedTime || 25)
   const [notes, setNotes] = useState(task.notes || '')
   const [scheduledStartDate, setScheduledStartDate] = useState(task.scheduledStart ? task.scheduledStart.split('T')[0] : '')
+  const [subtasks, setSubtasks] = useState(task.subtasks || [])
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('')
   
   // taskが切り替わったら初期値をリセット
   useEffect(() => {
     setEstimatedTime(task.estimatedTime || 25)
     setNotes(task.notes || '')
     setScheduledStartDate(task.scheduledStart ? task.scheduledStart.split('T')[0] : '')
-  }, [task.id, task.estimatedTime, task.notes, task.scheduledStart])
+    setSubtasks(task.subtasks || [])
+    setNewSubtaskTitle('')
+  }, [task.id, task.estimatedTime, task.notes, task.scheduledStart, task.subtasks])
+
+  const handleToggleSubtask = (id: string) => {
+    const newSubtasks = subtasks.map(st => st.id === id ? { ...st, completed: !st.completed } : st)
+    setSubtasks(newSubtasks)
+    onUpdate(task.id, { subtasks: newSubtasks })
+  }
+  
+  const handleEditSubtask = (id: string, title: string) => {
+    setSubtasks(prev => prev.map(st => st.id === id ? { ...st, title } : st))
+  }
+  
+  const handleDeleteSubtask = (id: string) => {
+    const newSubtasks = subtasks.filter(st => st.id !== id)
+    setSubtasks(newSubtasks)
+    onUpdate(task.id, { subtasks: newSubtasks })
+  }
+  
+  const handleAddSubtask = () => {
+    if (!newSubtaskTitle.trim() || subtasks.length >= 3) return;
+    const newId = 'st-' + Math.random().toString(36).substring(2, 9)
+    const newSubtasks = [...subtasks, { id: newId, title: newSubtaskTitle.trim(), completed: false }]
+    setSubtasks(newSubtasks)
+    setNewSubtaskTitle('')
+    onUpdate(task.id, { subtasks: newSubtasks })
+  }
 
   // 変更を親のReducerに送るまでのデバウンス用（保存用）
   useEffect(() => {
     const timer = setTimeout(() => {
       const currentStart = task.scheduledStart ? task.scheduledStart.split('T')[0] : ''
-      const hasChanged = estimatedTime !== (task.estimatedTime || 25) || notes !== (task.notes || '') || scheduledStartDate !== currentStart
+      const subtasksChanged = JSON.stringify(subtasks) !== JSON.stringify(task.subtasks || [])
+      const hasChanged = estimatedTime !== (task.estimatedTime || 25) || 
+                         notes !== (task.notes || '') || 
+                         scheduledStartDate !== currentStart ||
+                         subtasksChanged
+
       if (hasChanged) {
         let newScheduledStart = task.scheduledStart
         if (scheduledStartDate !== currentStart) {
@@ -38,12 +72,13 @@ export function TaskDetail({ task, onUpdate }: TaskDetailProps) {
         onUpdate(task.id, {
           estimatedTime,
           notes,
-          scheduledStart: newScheduledStart
+          scheduledStart: newScheduledStart,
+          subtasks
         })
       }
     }, 500)
     return () => clearTimeout(timer)
-  }, [estimatedTime, notes, scheduledStartDate, task.id, task.estimatedTime, task.notes, task.scheduledStart, onUpdate])
+  }, [estimatedTime, notes, scheduledStartDate, subtasks, task.id, task.estimatedTime, task.notes, task.scheduledStart, task.subtasks, onUpdate])
 
   return (
     <div className={styles.container}>
@@ -94,7 +129,44 @@ export function TaskDetail({ task, onUpdate }: TaskDetailProps) {
         />
       </div>
       
-      {/* サブタスク等は将来的に拡張 */}
+      <div className={styles.section}>
+        <label className={styles.label}>サブタスク (最大3つ)</label>
+        <div className={styles.subtasksList}>
+          {subtasks.map((st) => (
+            <div key={st.id} className={styles.subtaskItem}>
+              <input 
+                type="checkbox" 
+                checked={st.completed}
+                onChange={() => handleToggleSubtask(st.id)}
+                className={styles.subtaskCheckbox}
+              />
+              <input
+                type="text"
+                value={st.title}
+                onChange={(e) => handleEditSubtask(st.id, e.target.value)}
+                onBlur={() => onUpdate(task.id, { subtasks })}
+                className={`${styles.subtaskInput} ${st.completed ? styles.completedSubtask : ''}`}
+              />
+              <button onClick={() => handleDeleteSubtask(st.id)} className={styles.deleteSubtaskBtn} title="削除">✕</button>
+            </div>
+          ))}
+        </div>
+        {subtasks.length < 3 && (
+          <div className={styles.addSubtaskContainer}>
+            <input 
+              type="text" 
+              value={newSubtaskTitle}
+              onChange={(e) => setNewSubtaskTitle(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddSubtask()}
+              placeholder="+ サブタスクを追加 (Enterで確定)"
+              className={styles.addSubtaskInput}
+            />
+            <button onClick={handleAddSubtask} className={styles.addSubtaskBtn} disabled={!newSubtaskTitle.trim()}>
+              追加
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

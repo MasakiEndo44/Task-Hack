@@ -107,3 +107,103 @@
   transition: border-color var(--transition-fast);
   color-scheme: dark;
 }
+
+/* Subtasks */
+.subtasksList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.subtaskItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.subtaskCheckbox {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--zone-cleared);
+}
+
+.subtaskInput {
+  flex: 1;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.subtaskInput:focus {
+  outline: none;
+  border-color: var(--border-hover);
+  background: var(--bg-primary);
+}
+
+.completedSubtask {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.deleteSubtaskBtn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+}
+
+.deleteSubtaskBtn:hover {
+  background: rgba(255, 0, 0, 0.1);
+  color: var(--priority-urgent);
+}
+
+.addSubtaskContainer {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+}
+
+.addSubtaskInput {
+  flex: 1;
+  background: var(--bg-primary);
+  border: 1px dashed var(--border-default);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+}
+
+.addSubtaskInput:focus {
+  outline: none;
+  border-color: var(--border-hover);
+  border-style: solid;
+}
+
+.addSubtaskBtn {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
+  padding: 0 var(--space-md);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.addSubtaskBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.addSubtaskBtn:not(:disabled):hover {
+  background: var(--zone-cleared);
+  color: var(--bg-primary);
+  border-color: var(--zone-cleared);
+}

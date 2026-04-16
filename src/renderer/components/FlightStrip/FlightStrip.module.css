@@ -77,13 +77,13 @@
 
 .time {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.9rem;
   color: var(--text-muted);
 }
 
 .priorityBadge {
   font-family: var(--font-mono);
-  font-size: 0.6rem;
+  font-size: 0.85rem;
   font-weight: 700;
   padding: 1px 6px;
   border-radius: var(--radius-sm);
@@ -141,9 +141,38 @@
 }
 
 .category {
-  font-size: 0.6rem;
+  font-size: 0.85rem;
   color: var(--zone-cleared);
   letter-spacing: 0.05em;
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-top: 2px;
+}
+
+.subtasksIndicator {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.subtaskIconContainer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.subtaskCompleted {
+  color: rgb(43, 233, 46);
+  opacity: 0.9;
+}
+
+.subtaskPending {
+  color: var(--text-muted);
+  opacity: 0.5;
 }
 
 /* DONE ボタン */
@@ -175,7 +204,7 @@
 
 .doneText {
   font-family: var(--font-mono);
-  font-size: 0.5rem;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.1em;
 }
@@ -209,7 +238,7 @@
 
 .undoText {
   font-family: var(--font-mono);
-  font-size: 0.5rem;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.1em;
 }

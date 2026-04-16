@@ -127,14 +127,42 @@ export function useTaskReducer(initialTasks: Task[] = []) {
         setIsLoaded(true)
       })
     } else {
-      setIsLoaded(true) // For web non-electron environment
+      // For web non-electron environment: fallback to localStorage
+      if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+        setIsLoaded(true)
+        return
+      }
+
+      try {
+        const localData = localStorage.getItem('task-hack-tasks')
+        if (localData) {
+          const parsedData = JSON.parse(localData)
+          if (Array.isArray(parsedData) && parsedData.length > 0) {
+            dispatch({ type: 'INIT_TASKS', payload: { tasks: parsedData } })
+          }
+        }
+      } catch (e) {
+        console.error('Failed to parse localStorage tasks', e)
+      }
+      setIsLoaded(true)
     }
   }, [])
 
   // 状態変更時のオートセーブ
   useEffect(() => {
-    if (isLoaded && window.api && window.api.saveTasks) {
-      window.api.saveTasks(tasks).catch(err => console.error('Failed to save tasks', err))
+    if (isLoaded) {
+      if (window.api && window.api.saveTasks) {
+        window.api.saveTasks(tasks).catch(err => console.error('Failed to save tasks', err))
+      } else {
+        if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') return;
+        
+        // Fallback to localStorage in web browsers
+        try {
+          localStorage.setItem('task-hack-tasks', JSON.stringify(tasks))
+        } catch (e) {
+          console.error('Failed to save tasks to localStorage', e)
+        }
+      }
     }
   }, [tasks, isLoaded])
 
