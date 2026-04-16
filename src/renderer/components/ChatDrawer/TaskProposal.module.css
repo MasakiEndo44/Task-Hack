@@ -1,0 +1,59 @@
+.proposalCard {
+  background: var(--bg-surface);
+  border: 1px solid var(--zone-next);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  margin-top: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.badge {
+  background: var(--zone-next);
+  color: var(--bg-primary);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: bold;
+}
+.desc {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+.subtasks {
+  list-style: none;
+  font-size: 0.85rem;
+  padding-left: var(--space-sm);
+  color: var(--text-muted);
+}
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-sm);
+}
+.approveBtn {
+  background: var(--bg-elevated);
+  border: 1px solid var(--zone-next);
+  color: var(--zone-next);
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.approveBtn:hover:not(:disabled) {
+  background: var(--zone-next);
+  color: var(--bg-primary);
+}
+.approveBtn:disabled {
+  background: transparent;
+  color: var(--text-muted);
+  border-color: var(--border-default);
+  cursor: default;
+}

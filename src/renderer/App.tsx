@@ -167,7 +167,11 @@ function App(): React.JSX.Element {
       />
 
       {/* AIチャットドロワー */}
-      <ChatDrawer isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+      <ChatDrawer 
+        isOpen={isChatOpen} 
+        onClose={() => setIsChatOpen(false)} 
+        onAddTask={(payload) => dispatch({ type: 'ADD_TASK', payload })}
+      />
       
       {/* AIチャット起動ボタン */}
       {!isChatOpen && (

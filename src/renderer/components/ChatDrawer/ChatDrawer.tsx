@@ -1,13 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useChat } from '../../hooks/useChat'
+import { TaskProposal } from './TaskProposal'
+import type { TaskInput } from '../../types/task'
 import styles from './ChatDrawer.module.css'
 
 export interface ChatDrawerProps {
   isOpen: boolean
   onClose: () => void
+  onAddTask: (task: TaskInput) => void
 }
 
-export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose }) => {
+export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onAddTask }) => {
   const { messages, sendMessage, isLoading } = useChat()
   const [input, setInput] = useState('')
   const historyRef = useRef<HTMLDivElement>(null)
@@ -49,14 +52,30 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose }) => {
             タスクについて気軽に相談してください...
           </div>
         )}
-        {messages.map((m, i) => (
-          <div 
-            key={i} 
-            className={`${styles.message} ${m.role === 'user' ? styles.messageUser : styles.messageAssistant}`}
-          >
-            {m.content}
-          </div>
-        ))}
+        {messages.map((m, i) => {
+          if (m.role === 'assistant') {
+            const parts = m.content.split(/```(?:json)?\n([\s\S]*?)\n```/g)
+            return (
+              <div key={i} className={`${styles.message} ${styles.messageAssistant}`}>
+                {parts.map((p, j) => {
+                  if (j % 2 === 1) { // json block
+                    return <TaskProposal key={j} taskStr={p} onApprove={onAddTask} />
+                  }
+                  return p ? <div key={j}>{p}</div> : null
+                })}
+              </div>
+            )
+          }
+
+          return (
+            <div 
+              key={i} 
+              className={`${styles.message} ${styles.messageUser}`}
+            >
+              {m.content}
+            </div>
+          )
+        })}
         {isLoading && (
           <div className={styles.loading}>
             <span className={styles.dot}>.</span>
