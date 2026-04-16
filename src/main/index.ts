@@ -2,6 +2,7 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import fs from 'fs/promises'
 import { is } from '@electron-toolkit/utils'
+import OpenAI from 'openai'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -42,6 +43,7 @@ app.whenReady().then(() => {
 
   const dataDir = join(app.getPath('home'), '.task-hack')
   const tasksFile = join(dataDir, 'tasks.json')
+  const settingsFile = join(dataDir, 'settings.json')
 
   ipcMain.handle('loadTasks', async () => {
     try {
@@ -65,6 +67,39 @@ app.whenReady().then(() => {
       console.error('Failed to save tasks:', err)
       throw err
     }
+  })
+
+  ipcMain.handle('loadSettings', async () => {
+    try {
+      await fs.mkdir(dataDir, { recursive: true })
+      const data = await fs.readFile(settingsFile, 'utf-8')
+      return JSON.parse(data)
+    } catch (err: any) {
+      return { openAiApiKey: '' }
+    }
+  })
+
+  ipcMain.handle('saveSettings', async (_, settings) => {
+    try {
+      await fs.mkdir(dataDir, { recursive: true })
+      await fs.writeFile(settingsFile, JSON.stringify(settings, null, 2), 'utf-8')
+    } catch (err) {
+      console.error('Failed to save settings:', err)
+      throw err
+    }
+  })
+
+  ipcMain.handle('chatCompletion', async (_, messages, apiKey) => {
+    if (!apiKey) throw new Error('API Key missing')
+    const openai = new OpenAI({ apiKey })
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: 'You are Task-Hack AI, an ATC assistant. When proposing a task to the user, strictly output JSON wrapped in ```json ... ``` blocks.' },
+        ...messages
+      ]
+    })
+    return completion.choices[0].message.content
   })
 
   app.on('activate', function () {

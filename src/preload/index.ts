@@ -4,7 +4,10 @@ import { electronAPI } from '@electron-toolkit/preload'
 // Custom APIs for renderer
 const api = {
   loadTasks: () => ipcRenderer.invoke('loadTasks'),
-  saveTasks: (tasks: any) => ipcRenderer.invoke('saveTasks', tasks)
+  saveTasks: (tasks: any) => ipcRenderer.invoke('saveTasks', tasks),
+  loadSettings: () => ipcRenderer.invoke('loadSettings'),
+  saveSettings: (settings: any) => ipcRenderer.invoke('saveSettings', settings),
+  chatCompletion: (messages: any, apiKey: string) => ipcRenderer.invoke('chatCompletion', messages, apiKey)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
