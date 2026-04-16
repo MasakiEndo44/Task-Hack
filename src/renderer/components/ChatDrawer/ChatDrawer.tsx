@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useChat } from '../../hooks/useChat'
 import { TaskProposal } from './TaskProposal'
 import type { TaskInput } from '../../types/task'
@@ -13,7 +13,10 @@ export interface ChatDrawerProps {
 export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onAddTask }) => {
   const { messages, sendMessage, isLoading } = useChat()
   const [input, setInput] = useState('')
+  const [isComposing, setIsComposing] = useState(false)
+  const [attachedImage, setAttachedImage] = useState<string | null>(null)
   const historyRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (historyRef.current) {
@@ -21,17 +24,27 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onAddTa
     }
   }, [messages, isLoading])
 
-  const handleSend = () => {
-    if (!input.trim() || isLoading) return
-    sendMessage(input.trim())
+  const handleSend = useCallback(() => {
+    if ((!input.trim() && !attachedImage) || isLoading) return
+    sendMessage(input.trim(), attachedImage ?? undefined)
     setInput('')
-  }
+    setAttachedImage(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }, [input, attachedImage, isLoading, sendMessage])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !isComposing && !(e.nativeEvent as any).isComposing) {
       e.preventDefault()
       handleSend()
     }
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onloadend = () => setAttachedImage(reader.result as string)
+    reader.readAsDataURL(file)
   }
 
   return (
@@ -45,7 +58,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onAddTa
           ✕
         </button>
       </div>
-      
+
       <div className={styles.history} ref={historyRef}>
         {messages.length === 0 && (
           <div className={styles.message} style={{ alignSelf: 'center', color: 'var(--text-muted)' }}>
@@ -58,7 +71,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onAddTa
             return (
               <div key={i} className={`${styles.message} ${styles.messageAssistant}`}>
                 {parts.map((p, j) => {
-                  if (j % 2 === 1) { // json block
+                  if (j % 2 === 1) {
                     return <TaskProposal key={j} taskStr={p} onApprove={onAddTask} />
                   }
                   return p ? <div key={j}>{p}</div> : null
@@ -68,10 +81,10 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onAddTa
           }
 
           return (
-            <div 
-              key={i} 
-              className={`${styles.message} ${styles.messageUser}`}
-            >
+            <div key={i} className={`${styles.message} ${styles.messageUser}`}>
+              {m.imageBase64 && (
+                <img src={m.imageBase64} alt="添付画像" className={styles.messageImage} />
+              )}
               {m.content}
             </div>
           )
@@ -86,21 +99,57 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onAddTa
       </div>
 
       <div className={styles.inputArea}>
-        <textarea 
-          className={styles.input}
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="来週のプレゼンの準備をしなきゃ..."
-          disabled={isLoading}
-        />
-        <button 
-          className={styles.sendButton} 
-          onClick={handleSend} 
-          disabled={!input.trim() || isLoading}
-        >
-          Send
-        </button>
+        {attachedImage && (
+          <div className={styles.imagePreview}>
+            <img src={attachedImage} alt="添付プレビュー" className={styles.previewImage} />
+            <button
+              className={styles.removeImageBtn}
+              onClick={() => {
+                setAttachedImage(null)
+                if (fileInputRef.current) fileInputRef.current.value = ''
+              }}
+              aria-label="画像を削除"
+            >
+              ×
+            </button>
+          </div>
+        )}
+        <div className={styles.inputRow}>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/png,image/jpeg,image/gif,image/webp"
+            style={{ display: 'none' }}
+          />
+          <button
+            className={styles.attachButton}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isLoading}
+            aria-label="画像を添付"
+            title="画像を添付"
+          >
+            📎
+          </button>
+          <textarea
+            className={styles.input}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onCompositionStart={() => setIsComposing(true)}
+            onCompositionEnd={() => setIsComposing(false)}
+            onBlur={() => setIsComposing(false)}
+            placeholder="来週のプレゼンの準備をしなきゃ..."
+            disabled={isLoading}
+          />
+          <button
+            className={styles.sendButton}
+            onClick={handleSend}
+            disabled={(!input.trim() && !attachedImage) || isLoading}
+          >
+            Send
+          </button>
+        </div>
       </div>
     </div>
   )
