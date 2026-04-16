@@ -11,10 +11,17 @@ interface SettingsModalProps {
 export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer = 25, onSaveSettings }: SettingsModalProps) {
   const [obsidianPath, setObsidianPath] = useState('~/Documents/Obsidian/kecku_knowledge_brain/Task-Hack/')
   const [defaultTimer, setDefaultTimer] = useState(propDefaultTimer)
+  const [apiKey, setApiKey] = useState('')
 
   useEffect(() => {
     setDefaultTimer(propDefaultTimer)
   }, [propDefaultTimer, isOpen])
+
+  useEffect(() => {
+    if (isOpen) {
+      window.api.loadSettings().then((s: any) => setApiKey(s.openAiApiKey || ''))
+    }
+  }, [isOpen])
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -29,10 +36,12 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
   if (!isOpen) return null
 
   const handleSave = () => {
-    if (onSaveSettings) {
-      onSaveSettings(defaultTimer)
-    }
-    onClose()
+    window.api.saveSettings({ openAiApiKey: apiKey }).then(() => {
+      if (onSaveSettings) {
+        onSaveSettings(defaultTimer)
+      }
+      onClose()
+    })
   }
 
   return (
@@ -45,6 +54,18 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
         </div>
         
         <div className={styles.body}>
+          <div className={styles.section}>
+            <label>OpenAI API Key</label>
+            <input 
+              type="password" 
+              value={apiKey} 
+              onChange={e => setApiKey(e.target.value)}
+              className={styles.input}
+              placeholder="sk-..."
+            />
+            <span className={styles.help}>AIチャット機能に使用するAPIキーです。</span>
+          </div>
+
           <div className={styles.section}>
             <label>Obsidian Vault パス</label>
             <input 
