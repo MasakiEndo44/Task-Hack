@@ -10,26 +10,40 @@ interface TaskDetailProps {
 export function TaskDetail({ task, onUpdate }: TaskDetailProps) {
   const [estimatedTime, setEstimatedTime] = useState(task.estimatedTime || 25)
   const [notes, setNotes] = useState(task.notes || '')
+  const [scheduledStartDate, setScheduledStartDate] = useState(task.scheduledStart ? task.scheduledStart.split('T')[0] : '')
   
   // taskが切り替わったら初期値をリセット
   useEffect(() => {
     setEstimatedTime(task.estimatedTime || 25)
     setNotes(task.notes || '')
-  }, [task.id, task.estimatedTime, task.notes])
+    setScheduledStartDate(task.scheduledStart ? task.scheduledStart.split('T')[0] : '')
+  }, [task.id, task.estimatedTime, task.notes, task.scheduledStart])
 
   // 変更を親のReducerに送るまでのデバウンス用（保存用）
   useEffect(() => {
     const timer = setTimeout(() => {
-      const hasChanged = estimatedTime !== (task.estimatedTime || 25) || notes !== (task.notes || '')
+      const currentStart = task.scheduledStart ? task.scheduledStart.split('T')[0] : ''
+      const hasChanged = estimatedTime !== (task.estimatedTime || 25) || notes !== (task.notes || '') || scheduledStartDate !== currentStart
       if (hasChanged) {
+        let newScheduledStart = task.scheduledStart
+        if (scheduledStartDate !== currentStart) {
+          if (!scheduledStartDate) {
+            newScheduledStart = undefined
+          } else {
+            const timePart = task.scheduledStart ? task.scheduledStart.split('T')[1] : '09:00:00'
+            newScheduledStart = `${scheduledStartDate}T${timePart}`
+          }
+        }
+        
         onUpdate(task.id, {
           estimatedTime,
-          notes
+          notes,
+          scheduledStart: newScheduledStart
         })
       }
     }, 500)
     return () => clearTimeout(timer)
-  }, [estimatedTime, notes, task.id, task.estimatedTime, task.notes, onUpdate])
+  }, [estimatedTime, notes, scheduledStartDate, task.id, task.estimatedTime, task.notes, task.scheduledStart, onUpdate])
 
   return (
     <div className={styles.container}>
@@ -43,6 +57,16 @@ export function TaskDetail({ task, onUpdate }: TaskDetailProps) {
 
       <div className={styles.titleSection}>
         <h3 className={styles.title}>{task.title}</h3>
+      </div>
+
+      <div className={styles.section}>
+        <label className={styles.label}>着手予定日</label>
+        <input
+          type="date"
+          value={scheduledStartDate}
+          onChange={(e) => setScheduledStartDate(e.target.value)}
+          className={styles.dateInput}
+        />
       </div>
 
       <div className={styles.section}>

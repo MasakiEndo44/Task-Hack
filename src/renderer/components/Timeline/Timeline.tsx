@@ -1,21 +1,10 @@
+import { useState } from 'react'
 import { useClock } from '../../hooks/useClock'
 import type { Task } from '../../types/task'
 import styles from './Timeline.module.css'
 
 interface TimelineProps {
   tasks: Task[]
-}
-
-/** タイムライン表示時間帯 (6:00 - 24:00) */
-const TIMELINE_START_HOUR = 6
-const TIMELINE_END_HOUR = 24
-const TOTAL_HOURS = TIMELINE_END_HOUR - TIMELINE_START_HOUR
-
-/** 時刻を0-100のパーセンテージに変換 */
-function timeToPercent(date: Date): number {
-  const hours = date.getHours() + date.getMinutes() / 60
-  const clamped = Math.max(TIMELINE_START_HOUR, Math.min(TIMELINE_END_HOUR, hours))
-  return ((clamped - TIMELINE_START_HOUR) / TOTAL_HOURS) * 100
 }
 
 /** ゾーンに対応するCSS変数名 */
@@ -26,78 +15,140 @@ const ZONE_COLORS: Record<string, string> = {
   CLEARED: 'var(--zone-cleared)'
 }
 
+const isSameDay = (d1: Date, d2: Date) => 
+  d1.getFullYear() === d2.getFullYear() && 
+  d1.getMonth() === d2.getMonth() && 
+  d1.getDate() === d2.getDate();
+
+function getWeekDates(now: Date): Date[] {
+  const current = new Date(now);
+  current.setHours(0,0,0,0);
+  const dates: Date[] = [];
+  const day = current.getDay();
+  const diffToMonday = current.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(current);
+  monday.setDate(diffToMonday);
+  
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    dates.push(d);
+  }
+  return dates;
+}
+
+function getMonthDates(now: Date): Date[] {
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const numDays = new Date(year, month + 1, 0).getDate();
+  const dates: Date[] = [];
+  for (let i = 1; i <= numDays; i++) {
+    dates.push(new Date(year, month, i, 0, 0, 0, 0));
+  }
+  return dates;
+}
+
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
 export function Timeline({ tasks }: TimelineProps) {
+  const [viewMode, setViewMode] = useState<'week' | 'month'>('week')
   const { now } = useClock()
-  const sweepPercent = timeToPercent(now)
 
-  const scheduledTasks = tasks.filter(t => t.scheduledStart)
+  const dates = viewMode === 'week' ? getWeekDates(now) : getMonthDates(now);
+  const scheduledTasks = tasks.filter(t => t.scheduledStart);
 
-  const hourMarkers = Array.from(
-    { length: TOTAL_HOURS + 1 },
-    (_, i) => TIMELINE_START_HOUR + i
-  )
+  const sweepPercent = (() => {
+    const totalDays = dates.length;
+    const todayIndex = dates.findIndex(d => isSameDay(d, now));
+    if (todayIndex === -1) return -100;
+    const percentOfDay = (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) / 86400;
+    return ((todayIndex + percentOfDay) / totalDays) * 100;
+  })()
 
   return (
     <div className={styles.timelineContainer}>
       <div className={styles.timelineHeader}>
-        <span className={styles.timelineIcon}>◆</span>
-        <span className={styles.timelineTitle}>TIMELINE</span>
+        <div className={styles.timelineHeaderLeft}>
+          <span className={styles.timelineIcon}>◆</span>
+          <span className={styles.timelineTitle}>TIMELINE</span>
+        </div>
+        <div className={styles.viewToggles}>
+          <button 
+            className={`${styles.toggleBtn} ${viewMode === 'week' ? styles.active : ''}`}
+            onClick={() => setViewMode('week')}
+          >
+            Week
+          </button>
+          <button 
+            className={`${styles.toggleBtn} ${viewMode === 'month' ? styles.active : ''}`}
+            onClick={() => setViewMode('month')}
+          >
+            Month
+          </button>
+        </div>
       </div>
       <div className={styles.timeline} data-testid="timeline">
-        {/* 時間マーカー */}
+        {/* 日付マーカー */}
         <div className={styles.markers}>
-          {hourMarkers.map(hour => (
+          {dates.map((date, i) => (
             <div
-              key={hour}
-              className={styles.marker}
-              style={{ left: `${((hour - TIMELINE_START_HOUR) / TOTAL_HOURS) * 100}%` }}
+              key={i}
+              className={`${styles.marker} ${isSameDay(date, now) ? styles.markerToday : ''}`}
+              style={{ left: `${(i / dates.length) * 100}%`, width: `${100 / dates.length}%` }}
             >
-              <span className={styles.markerLabel}>
-                {hour.toString().padStart(2, '0')}:00
-              </span>
+              <div className={styles.markerLabelGroup}>
+                {viewMode === 'week' && (
+                  <span className={styles.markerDayName}>
+                    {DAY_NAMES[date.getDay()]}
+                  </span>
+                )}
+                <span className={styles.markerDate}>
+                  {date.getDate()}
+                </span>
+              </div>
               <div className={styles.markerLine} />
             </div>
           ))}
         </div>
 
-        {/* タスクブロック */}
+        {/* タスクブロック群 */}
         <div className={styles.blocks}>
-          {scheduledTasks.map(task => {
-            const start = new Date(task.scheduledStart!)
-            const end = task.scheduledEnd
-              ? new Date(task.scheduledEnd)
-              : new Date(start.getTime() + 3600000)
-            const leftPercent = timeToPercent(start)
-            const rightPercent = timeToPercent(end)
-            const widthPercent = rightPercent - leftPercent
-
-            return (
-              <div
-                key={task.id}
-                className={styles.block}
-                data-testid={`timeline-block-${task.id}`}
-                style={{
-                  left: `${leftPercent}%`,
-                  width: `${Math.max(widthPercent, 1.5)}%`,
-                  '--block-color': ZONE_COLORS[task.zone] || 'var(--text-muted)'
-                } as React.CSSProperties}
-                title={`${task.id}: ${task.title}`}
-              >
-                <span className={styles.blockDot}>●</span>
-                <span className={styles.blockLabel}>{task.id}</span>
-              </div>
-            )
+          {dates.map((date, index) => {
+             const dayTasks = scheduledTasks.filter(t => isSameDay(new Date(t.scheduledStart!), date));
+             if (dayTasks.length === 0) return null;
+             
+             return (
+                <div 
+                  key={index} 
+                  className={styles.dayTaskContainer} 
+                  style={{ left: `${(index / dates.length) * 100}%`, width: `${100 / dates.length}%` }}
+                >
+                   {dayTasks.map(task => (
+                      <div 
+                        key={task.id} 
+                        className={styles.block} 
+                        style={{ '--block-color': ZONE_COLORS[task.zone] || 'var(--text-muted)' } as React.CSSProperties}
+                        title={`${task.id}: ${task.title}`}
+                      >
+                         <span className={styles.blockDot}>●</span>
+                         {viewMode === 'week' && <span className={styles.blockLabel}>{task.id}</span>}
+                      </div>
+                   ))}
+                </div>
+             )
           })}
         </div>
 
-        {/* スイープライン（現在時刻） */}
-        <div
-          className={styles.sweepLine}
-          data-testid="sweep-line"
-          style={{ left: `${sweepPercent}%` }}
-        >
-          <div className={styles.sweepDot} />
-        </div>
+        {/* スイープライン（現在時刻進行度） */}
+        {sweepPercent >= 0 && sweepPercent <= 100 && (
+          <div
+            className={styles.sweepLine}
+            data-testid="sweep-line"
+            style={{ left: `${sweepPercent}%` }}
+          >
+            <div className={styles.sweepDot} />
+          </div>
+        )}
       </div>
     </div>
   )

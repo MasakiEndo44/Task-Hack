@@ -89,7 +89,21 @@
   transition: border-color var(--transition-fast);
 }
 
-.textarea:focus {
+.textarea:focus,
+.dateInput:focus {
   outline: none;
   border-color: var(--border-hover);
+}
+
+.dateInput {
+  width: 100%;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  transition: border-color var(--transition-fast);
+  color-scheme: dark;
 }
