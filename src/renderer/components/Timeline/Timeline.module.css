@@ -5,10 +5,16 @@
 
 .timelineHeader {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: var(--space-xs);
   padding: var(--space-xs) var(--space-md);
   border-bottom: 1px dashed var(--border-default);
+}
+
+.timelineHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
 }
 
 .timelineIcon {
@@ -24,10 +30,34 @@
   letter-spacing: 0.2em;
 }
 
+.viewToggles {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.toggleBtn {
+  background: transparent;
+  border: 1px solid var(--border-default);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.toggleBtn.active {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border-color: var(--text-primary);
+}
+
 .timeline {
   position: relative;
-  height: 56px;
-  overflow: hidden;
+  height: 80px;
+  overflow-y: auto;
+  overflow-x: hidden;
   z-index: var(--z-timeline);
 }
 
@@ -46,46 +76,74 @@
   bottom: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
 }
 
-.markerLabel {
-  font-family: var(--font-mono);
-  font-size: 0.55rem;
-  color: var(--text-muted);
+.markerLabelGroup {
+  display: flex;
+  gap: 4px;
+  align-items: baseline;
+  justify-content: center;
+  width: 100%;
   padding-top: 2px;
-  white-space: nowrap;
+}
+
+.markerDayName {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  color: var(--text-muted);
+}
+
+.markerDate {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+}
+
+.markerToday .markerDate {
+  color: var(--sweep-line);
+  font-weight: 700;
 }
 
 .markerLine {
   width: 1px;
   flex: 1;
   background: var(--border-default);
-  opacity: 0.5;
+  opacity: 0.3;
+  margin: 0 auto;
 }
 
-/* タスクブロック */
+/* タスクブロック群 */
 .blocks {
   position: absolute;
   top: 18px;
   left: 0;
   right: 0;
-  bottom: 4px;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.dayTaskContainer {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 4px;
 }
 
 .block {
-  position: absolute;
-  top: 4px;
-  height: calc(100% - 8px);
+  width: 100%;
+  height: 18px;
   background: color-mix(in srgb, var(--block-color) 20%, transparent);
   border: 1px solid color-mix(in srgb, var(--block-color) 50%, transparent);
-  border-radius: var(--radius-sm);
+  border-radius: 2px;
   display: flex;
   align-items: center;
   padding: 0 4px;
   gap: 3px;
   overflow: hidden;
   transition: background var(--transition-fast);
+  pointer-events: auto;
 }
 
 .block:hover {
@@ -93,8 +151,9 @@
 }
 
 .blockDot {
-  font-size: 0.4rem;
+  font-size: 0.35rem;
   color: var(--block-color);
+  flex-shrink: 0;
 }
 
 .blockLabel {
@@ -113,10 +172,10 @@
   background: var(--sweep-line);
   box-shadow:
     0 0 8px var(--glow-green),
-    0 0 16px rgba(16, 185, 129, 0.3);
+    0 0 16px rgba(89, 238, 166, 0.3);
   z-index: 2;
   pointer-events: none;
-  animation: sweepGlow 2s ease-in-out infinite;
+  opacity: 0.8;
 }
 
 .sweepDot {
@@ -128,9 +187,4 @@
   background: var(--sweep-line);
   border-radius: 50%;
   box-shadow: 0 0 6px var(--glow-green);
-}
-
-@keyframes sweepGlow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
 }

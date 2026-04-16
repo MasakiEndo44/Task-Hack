@@ -27,25 +27,17 @@ const mockTasks: Task[] = [
 ]
 
 describe('Timeline', () => {
-  it('should render time markers in HH:00 format', () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-04-16T10:00:00'))
-    render(<Timeline tasks={mockTasks} />)
-    expect(screen.getByText('06:00')).toBeInTheDocument()
-    expect(screen.getByText('12:00')).toBeInTheDocument()
-    expect(screen.getByText('18:00')).toBeInTheDocument()
-    vi.useRealTimers()
-  })
-
-  it('should render the TIMELINE header', () => {
+  it('should render the TIMELINE header and toggles', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-04-16T10:00:00'))
     render(<Timeline tasks={mockTasks} />)
     expect(screen.getByText('TIMELINE')).toBeInTheDocument()
+    expect(screen.getByText('Week')).toBeInTheDocument()
+    expect(screen.getByText('Month')).toBeInTheDocument()
     vi.useRealTimers()
   })
 
-  it('should render the sweep line (current time indicator)', () => {
+  it('should render the sweep line (Today indicator)', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-04-16T10:00:00'))
     render(<Timeline tasks={mockTasks} />)
@@ -57,8 +49,8 @@ describe('Timeline', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-04-16T10:00:00'))
     render(<Timeline tasks={mockTasks} />)
-    expect(screen.getByTestId('timeline-block-FS0001')).toBeInTheDocument()
-    expect(screen.getByTestId('timeline-block-FS0002')).toBeInTheDocument()
+    expect(screen.getByText('FS0001')).toBeInTheDocument()
+    expect(screen.getByText('FS0002')).toBeInTheDocument()
     vi.useRealTimers()
   })
 
@@ -74,7 +66,7 @@ describe('Timeline', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-04-16T10:00:00'))
     render(<Timeline tasks={[unscheduledTask]} />)
-    expect(screen.queryByTestId('timeline-block-FS0003')).not.toBeInTheDocument()
+    expect(screen.queryByText('FS0003')).not.toBeInTheDocument()
     vi.useRealTimers()
   })
 

@@ -5,6 +5,7 @@ interface FlightStripProps {
   task: Task
   onComplete: (taskId: string) => void
   onUndo?: (taskId: string) => void
+  onClick?: (taskId: string) => void
   isDragging?: boolean
 }
 
@@ -18,7 +19,7 @@ function formatScheduledTime(iso?: string): string | null {
   })
 }
 
-export function FlightStrip({ task, onComplete, onUndo, isDragging = false }: FlightStripProps) {
+export function FlightStrip({ task, onComplete, onUndo, onClick, isDragging = false }: FlightStripProps) {
   const scheduledTime = formatScheduledTime(task.scheduledStart)
   const isUrgent = task.priority === 'URG'
   const isCleared = task.zone === 'CLEARED'
@@ -27,6 +28,7 @@ export function FlightStrip({ task, onComplete, onUndo, isDragging = false }: Fl
     <div
       className={`${styles.strip} ${styles[task.zone.toLowerCase()]} ${isDragging ? styles.dragging : ''}`}
       data-testid={`flight-strip-${task.id}`}
+      onClick={() => onClick?.(task.id)}
     >
       {/* 上段: フライトID + 時刻 + 優先度バッジ */}
       <div className={styles.topRow}>
@@ -43,15 +45,38 @@ export function FlightStrip({ task, onComplete, onUndo, isDragging = false }: Fl
       <div className={styles.bottomRow}>
         <div className={styles.infoSection}>
           <span className={styles.title}>{task.title}</span>
-          {task.category && (
-            <span className={styles.category}>{task.category}</span>
-          )}
+          <div className={styles.metaRow}>
+            {task.category && (
+              <span className={styles.category}>{task.category}</span>
+            )}
+            {task.subtasks && task.subtasks.length > 0 && (
+              <div className={styles.subtasksIndicator}>
+                {task.subtasks.map(st => (
+                  <span key={st.id} className={styles.subtaskIconContainer} title={st.title}>
+                    {st.completed ? (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={styles.subtaskCompleted}>
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M7 12l3.5 3.5L18 8" />
+                      </svg>
+                    ) : (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={styles.subtaskPending}>
+                        <circle cx="12" cy="12" r="10" />
+                      </svg>
+                    )}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {isCleared && onUndo ? (
           <button
             className={styles.undoButton}
-            onClick={() => onUndo(task.id)}
+            onClick={(e) => {
+              e.stopPropagation()
+              onUndo(task.id)
+            }}
             aria-label="元に戻す"
             title="完了を取り消す"
           >
@@ -61,7 +86,10 @@ export function FlightStrip({ task, onComplete, onUndo, isDragging = false }: Fl
         ) : (
           <button
             className={styles.completeButton}
-            onClick={() => onComplete(task.id)}
+            onClick={(e) => {
+              e.stopPropagation()
+              onComplete(task.id)
+            }}
             aria-label="完了"
             title="タスクを完了する"
           >

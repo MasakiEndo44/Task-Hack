@@ -3,3 +3,11 @@
 
 /* Inter — UI全般 */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* GAU Private — アプリタイトル用サイバーフォント */
+@font-face {
+  font-family: 'GAU_Private';
+  src: url('../assets/fonts/GAU_private_R.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}

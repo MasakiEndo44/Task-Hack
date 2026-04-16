@@ -21,8 +21,7 @@ export function StatusBar({ zoneCounts }: StatusBarProps) {
   return (
     <div className={styles.statusBar} role="status" aria-label="タスクステータス">
       <div className={styles.appTitle}>
-        <span className={styles.appIcon}>◆</span>
-        <span className={styles.appName}>FLIGHT STRIP TODO</span>
+        <span className={styles.appName}>Task-Hack</span>
       </div>
       <div className={styles.zones}>
         {ZONE_LABELS.map(({ zone, label, cssVar }) => (

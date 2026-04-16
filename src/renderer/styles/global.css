@@ -15,28 +15,28 @@
   --text-muted: #4a5d80;
 
   /* ATCゾーンカラー */
-  --zone-active: #ff3b3b;
-  --zone-active-glow: rgba(255, 59, 59, 0.3);
-  --zone-next: #fbbf24;
-  --zone-next-glow: rgba(251, 191, 36, 0.2);
-  --zone-holding: #3b82f6;
-  --zone-holding-glow: rgba(59, 130, 246, 0.15);
-  --zone-cleared: #10b981;
-  --zone-cleared-glow: rgba(16, 185, 129, 0.15);
+  --zone-active: #59EBEE;
+  --zone-active-glow: rgba(89, 235, 238, 0.3);
+  --zone-next: #59A1EE;
+  --zone-next-glow: rgba(89, 161, 238, 0.2);
+  --zone-holding: #8987F2;
+  --zone-holding-glow: rgba(137, 135, 242, 0.15);
+  --zone-cleared: #2BE92E;
+  --zone-cleared-glow: rgba(43, 233, 46, 0.15);
 
   /* 優先度カラー */
-  --priority-urgent: #ff3b3b;
-  --priority-normal: #3b82f6;
+  --priority-urgent: #59EBEE;
+  --priority-normal: #8987F2;
 
   /* スキャンライン・グロー効果 */
-  --glow-green: rgba(16, 185, 129, 0.4);
-  --glow-amber: rgba(251, 191, 36, 0.4);
-  --sweep-line: rgba(16, 185, 129, 0.8);
+  --glow-green: rgba(89, 238, 166, 0.4);
+  --glow-amber: rgba(89, 161, 238, 0.4);
+  --sweep-line: rgba(89, 238, 166, 0.8);
 
   /* ボーダー */
   --border-default: #1e2d42;
-  --border-active: #ff3b3b;
-  --border-hover: #3b82f6;
+  --border-active: #59EBEE;
+  --border-hover: #8987F2;
 
   /* フォント */
   --font-mono: 'JetBrains Mono', monospace;
@@ -104,8 +104,8 @@ body::after {
     0deg,
     transparent,
     transparent 2px,
-    rgba(16, 185, 129, 0.015) 2px,
-    rgba(16, 185, 129, 0.015) 4px
+    rgba(89, 238, 166, 0.015) 2px,
+    rgba(89, 238, 166, 0.015) 4px
   );
   z-index: 9999;
 }
@@ -136,6 +136,6 @@ body::after {
 
 /* セレクション */
 ::selection {
-  background-color: rgba(59, 130, 246, 0.3);
+  background-color: rgba(89, 235, 238, 0.3);
   color: var(--text-primary);
 }

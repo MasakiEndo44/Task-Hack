@@ -33,6 +33,19 @@ export interface Task {
   /** タスク詳細（任意） */
   description?: string
 
+  /** 所要時間（分単位、任意） */
+  estimatedTime?: number
+
+  /** タスクに関するメモ（任意） */
+  notes?: string
+
+  /** サブタスク（任意） */
+  subtasks?: {
+    id: string
+    title: string
+    completed: boolean
+  }[]
+
   /** 所属ゾーン */
   zone: ZoneType
 

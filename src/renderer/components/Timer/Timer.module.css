@@ -1,0 +1,103 @@
+.timer {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.running {
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.1);
+}
+
+.wrapup {
+  border-color: rgba(251, 191, 36, 0.6);
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.2);
+  animation: pulse-wrapup 2s infinite ease-in-out;
+}
+
+@keyframes pulse-wrapup {
+  0%, 100% { box-shadow: 0 0 12px rgba(251, 191, 36, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.4); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wrapup {
+    animation: none;
+    background: rgba(251, 191, 36, 0.05);
+  }
+}
+
+.display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.time {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.05em;
+}
+
+.controls {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.button {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.button:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.progressContainer {
+  height: 4px;
+  background: var(--bg-surface);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  background: var(--text-primary);
+  transition: width 1s linear;
+}
+
+.wrapup .progressBar {
+  background: var(--zone-next); /* Amber/Yellow to indicate wrapup */
+}
+
+.wrapupMessage {
+  font-size: 0.75rem;
+  color: var(--zone-next);
+  text-align: center;
+  margin-top: 4px;
+  font-weight: 600;
+  animation: fadeIn var(--transition-normal) ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

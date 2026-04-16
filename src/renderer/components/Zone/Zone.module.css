@@ -13,12 +13,12 @@
 
 .zone.over {
   border-color: var(--zone-next);
-  box-shadow: 0 0 16px rgba(251, 191, 36, 0.2);
+  box-shadow: 0 0 16px rgba(89, 161, 238, 0.2);
 }
 
 .zone.full.over {
   border-color: var(--zone-active);
-  box-shadow: 0 0 16px rgba(255, 59, 59, 0.2);
+  box-shadow: 0 0 16px rgba(89, 235, 238, 0.2);
 }
 
 /* ゾーン別アクセントカラー */

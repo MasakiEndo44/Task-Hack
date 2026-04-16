@@ -13,7 +13,7 @@ const mockCounts: Record<ZoneType, { total: number; urgent: number }> = {
 describe('StatusBar', () => {
   it('should display app title', () => {
     render(<StatusBar zoneCounts={mockCounts} />)
-    expect(screen.getByText('FLIGHT STRIP TODO')).toBeInTheDocument()
+    expect(screen.getByText('Task-Hack')).toBeInTheDocument()
   })
 
   it('should display zone labels with colon', () => {

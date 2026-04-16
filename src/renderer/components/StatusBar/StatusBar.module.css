@@ -18,17 +18,16 @@
   margin-right: var(--space-md);
 }
 
-.appIcon {
-  color: var(--zone-cleared);
-  font-size: 0.7rem;
-}
-
 .appName {
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: 0.2em;
+  font-family: 'GAU_Private', var(--font-mono);
+  font-size: 2rem;
+  font-weight: normal;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, var(--zone-active), var(--zone-cleared));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 12px rgba(89, 235, 238, 0.3);
 }
 
 .zones {
@@ -46,20 +45,20 @@
 .zoneLabel {
   color: var(--text-muted);
   font-weight: 500;
-  font-size: 0.7rem;
+  font-size: 0.85rem;
   letter-spacing: 0.05em;
 }
 
 .zoneCount {
   color: var(--indicator-color);
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 1rem;
   text-shadow: 0 0 8px var(--indicator-color);
 }
 
 .separator {
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font-size: 1rem;
 }
 
 .urgentIndicator {
@@ -67,20 +66,20 @@
   align-items: center;
   gap: 2px;
   padding: 1px 6px;
-  background: rgba(255, 59, 59, 0.1);
-  border: 1px solid rgba(255, 59, 59, 0.3);
+  background: rgba(89, 235, 238, 0.1);
+  border: 1px solid rgba(89, 235, 238, 0.3);
   border-radius: var(--radius-sm);
 }
 
 .urgentLabel {
   color: var(--priority-urgent);
   font-weight: 600;
-  font-size: 0.7rem;
+  font-size: 0.85rem;
 }
 
 .urgentCount {
   color: var(--priority-urgent);
   font-weight: 700;
-  font-size: 0.8rem;
-  text-shadow: 0 0 8px rgba(255, 59, 59, 0.5);
+  font-size: 1rem;
+  text-shadow: 0 0 8px rgba(89, 235, 238, 0.5);
 }

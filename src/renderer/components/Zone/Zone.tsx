@@ -7,6 +7,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import type { Task, ZoneType } from '../../types/task'
 import { FlightStrip } from '../FlightStrip/FlightStrip'
+import { Timer } from '../Timer/Timer'
 import styles from './Zone.module.css'
 
 interface ZoneProps {
@@ -18,16 +19,20 @@ interface ZoneProps {
   maxTasks: number
   onComplete: (taskId: string) => void
   onUndo?: (taskId: string) => void
+  onClickTask?: (taskId: string) => void
+  defaultTimer?: number
 }
 
 function SortableFlightStrip({
   task,
   onComplete,
-  onUndo
+  onUndo,
+  onClick
 }: {
   task: Task
   onComplete: (taskId: string) => void
   onUndo?: (taskId: string) => void
+  onClick?: (taskId: string) => void
 }) {
   const {
     attributes,
@@ -44,13 +49,19 @@ function SortableFlightStrip({
   }
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div 
+      ref={setNodeRef} 
+      style={style} 
+      {...attributes} 
+      {...listeners}
+      onClick={() => onClick?.(task.id)}
+    >
       <FlightStrip task={task} onComplete={onComplete} onUndo={onUndo} isDragging={isDragging} />
     </div>
   )
 }
 
-export function Zone({ zone, title, subtitle, icon, tasks, maxTasks, onComplete, onUndo }: ZoneProps) {
+export function Zone({ zone, title, subtitle, icon, tasks, maxTasks, onComplete, onUndo, onClickTask, defaultTimer = 25 }: ZoneProps) {
   const { setNodeRef, isOver } = useDroppable({ id: zone })
   const isFull = maxTasks !== Infinity && tasks.length >= maxTasks
   const countDisplay = maxTasks === Infinity
@@ -74,6 +85,12 @@ export function Zone({ zone, title, subtitle, icon, tasks, maxTasks, onComplete,
         </div>
         <span className={styles.count}>{countDisplay}</span>
       </div>
+      
+      {/* ACTIVEゾーンかつタスクが存在する場合にタイマーを表示 */}
+      {zone === 'ACTIVE' && tasks.length > 0 && (
+        <Timer initialMinutes={tasks[0].estimatedTime || defaultTimer} />
+      )}
+
       <SortableContext
         items={tasks.map(t => t.id)}
         strategy={verticalListSortingStrategy}
@@ -90,6 +107,7 @@ export function Zone({ zone, title, subtitle, icon, tasks, maxTasks, onComplete,
                 task={task}
                 onComplete={onComplete}
                 onUndo={onUndo}
+                onClick={onClickTask}
               />
             ))
           )}
