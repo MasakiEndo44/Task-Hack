@@ -1,4 +1,4 @@
-import { useReducer, useCallback } from 'react'
+import { useReducer, useCallback, useEffect, useState } from 'react'
 import type { Task, ZoneType, TaskInput } from '../types/task'
 import { isZoneFull } from '../types/task'
 import { generateFlightId } from '../utils/flightId'
@@ -12,6 +12,7 @@ type TaskAction =
   | { type: 'UNDO_COMPLETE'; payload: { taskId: string } }
   | { type: 'UPDATE_TASK'; payload: { taskId: string; updates: Partial<Task> } }
   | { type: 'DELETE_TASK'; payload: { taskId: string } }
+  | { type: 'INIT_TASKS'; payload: { tasks: Task[] } }
 
 // --- Reducer ---
 
@@ -98,6 +99,10 @@ function taskReducer(state: Task[], action: TaskAction): Task[] {
       return state.filter(t => t.id !== action.payload.taskId)
     }
 
+    case 'INIT_TASKS': {
+      return action.payload.tasks
+    }
+
     default:
       return state
   }
@@ -107,6 +112,31 @@ function taskReducer(state: Task[], action: TaskAction): Task[] {
 
 export function useTaskReducer(initialTasks: Task[] = []) {
   const [tasks, dispatch] = useReducer(taskReducer, initialTasks)
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  // 起動時の初期ロード
+  useEffect(() => {
+    if (window.api && window.api.loadTasks) {
+      window.api.loadTasks().then((loadedTasks) => {
+        if (loadedTasks) {
+          dispatch({ type: 'INIT_TASKS', payload: { tasks: loadedTasks } })
+        }
+        setIsLoaded(true)
+      }).catch(err => {
+        console.error('Failed to load tasks', err)
+        setIsLoaded(true)
+      })
+    } else {
+      setIsLoaded(true) // For web non-electron environment
+    }
+  }, [])
+
+  // 状態変更時のオートセーブ
+  useEffect(() => {
+    if (isLoaded && window.api && window.api.saveTasks) {
+      window.api.saveTasks(tasks).catch(err => console.error('Failed to save tasks', err))
+    }
+  }, [tasks, isLoaded])
 
   const getTasksByZone = useCallback(() => {
     const grouped: Record<ZoneType, Task[]> = {

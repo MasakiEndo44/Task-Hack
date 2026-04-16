@@ -21,9 +21,10 @@ interface DashboardProps {
   onUndoComplete: (taskId: string) => void
   onMoveTask: (taskId: string, toZone: ZoneType, toIndex: number) => void
   onClickTask?: (taskId: string) => void
+  defaultTimer: number
 }
 
-export function Dashboard({ tasksByZone, onComplete, onUndoComplete, onMoveTask, onClickTask }: DashboardProps) {
+export function Dashboard({ tasksByZone, onComplete, onUndoComplete, onMoveTask, onClickTask, defaultTimer }: DashboardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
 
   const sensors = useSensors(
@@ -83,6 +84,7 @@ export function Dashboard({ tasksByZone, onComplete, onUndoComplete, onMoveTask,
               maxTasks={ZONE_LIMITS.ACTIVE}
               onComplete={onComplete}
               onClickTask={onClickTask}
+              defaultTimer={defaultTimer}
             />
           </div>
           <div className={styles.nextZone}>

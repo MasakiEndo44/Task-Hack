@@ -1,10 +1,13 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { useTaskReducer } from './hooks/useTaskReducer'
 import type { ZoneType } from './types/task'
 import { Clock } from './components/Clock/Clock'
 import { StatusBar } from './components/StatusBar/StatusBar'
 import { Timeline } from './components/Timeline/Timeline'
 import { Dashboard } from './components/Dashboard/Dashboard'
+import { Drawer } from './components/Drawer/Drawer'
+import { TaskDetail } from './components/TaskDetail/TaskDetail'
+import { SettingsModal } from './components/SettingsModal/SettingsModal'
 import styles from './App.module.css'
 
 // デモ用サンプルタスク（開発時の動作確認用）
@@ -85,6 +88,9 @@ const DEMO_TASKS = [
 
 function App(): React.JSX.Element {
   const { tasks, dispatch, getTasksByZone, getZoneCounts } = useTaskReducer(DEMO_TASKS)
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [defaultTimer, setDefaultTimer] = useState(25)
 
   const handleComplete = useCallback((taskId: string) => {
     dispatch({ type: 'COMPLETE_TASK', payload: { taskId } })
@@ -98,12 +104,25 @@ function App(): React.JSX.Element {
     dispatch({ type: 'MOVE_TASK', payload: { taskId, toZone, toIndex } })
   }, [dispatch])
 
+  const handleUpdateTask = useCallback((taskId: string, updates: Partial<Task>) => {
+    dispatch({ type: 'UPDATE_TASK', payload: { taskId, updates } })
+  }, [dispatch])
+
+  const selectedTask = tasks.find(t => t.id === selectedTaskId) || null
+
   return (
     <div className={styles.app}>
       {/* 上部: ステータスバー + 時計 */}
       <header className={styles.header}>
         <StatusBar zoneCounts={getZoneCounts()} />
         <div className={styles.headerRight}>
+          <button 
+            className={styles.settingsButton} 
+            onClick={() => setIsSettingsOpen(true)}
+            aria-label="設定"
+          >
+            ⚙️
+          </button>
           <Clock />
         </div>
       </header>
@@ -118,8 +137,32 @@ function App(): React.JSX.Element {
           onComplete={handleComplete}
           onUndoComplete={handleUndoComplete}
           onMoveTask={handleMoveTask}
+          onClickTask={setSelectedTaskId}
+          defaultTimer={defaultTimer}
         />
       </main>
+
+      {/* タスク詳細ドロワー */}
+      <Drawer
+        isOpen={selectedTaskId !== null}
+        onClose={() => setSelectedTaskId(null)}
+        title={selectedTask ? `Task Details: ${selectedTask.id}` : ''}
+      >
+        {selectedTask && (
+          <TaskDetail
+            task={selectedTask}
+            onUpdate={handleUpdateTask}
+          />
+        )}
+      </Drawer>
+
+      {/* 設定モーダル */}
+      <SettingsModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+        defaultTimer={defaultTimer}
+        onSaveSettings={(timer) => setDefaultTimer(timer)}
+      />
     </div>
   )
 }
