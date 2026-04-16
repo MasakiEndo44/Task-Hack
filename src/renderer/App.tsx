@@ -8,6 +8,7 @@ import { Dashboard } from './components/Dashboard/Dashboard'
 import { Drawer } from './components/Drawer/Drawer'
 import { TaskDetail } from './components/TaskDetail/TaskDetail'
 import { SettingsModal } from './components/SettingsModal/SettingsModal'
+import { ChatDrawer } from './components/ChatDrawer/ChatDrawer'
 import styles from './App.module.css'
 
 // デモ用サンプルタスク（開発時の動作確認用）
@@ -90,6 +91,7 @@ function App(): React.JSX.Element {
   const { tasks, dispatch, getTasksByZone, getZoneCounts } = useTaskReducer(DEMO_TASKS)
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isChatOpen, setIsChatOpen] = useState(false)
   const [defaultTimer, setDefaultTimer] = useState(25)
 
   const handleComplete = useCallback((taskId: string) => {
@@ -163,6 +165,20 @@ function App(): React.JSX.Element {
         defaultTimer={defaultTimer}
         onSaveSettings={(timer) => setDefaultTimer(timer)}
       />
+
+      {/* AIチャットドロワー */}
+      <ChatDrawer isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+      
+      {/* AIチャット起動ボタン */}
+      {!isChatOpen && (
+        <button 
+          className={styles.chatFab}
+          onClick={() => setIsChatOpen(true)}
+          aria-label="Open AI Co-planner"
+        >
+          AI
+        </button>
+      )}
     </div>
   )
 }
