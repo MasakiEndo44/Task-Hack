@@ -1,17 +1,18 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useChat } from '../../hooks/useChat'
 import { TaskProposal } from './TaskProposal'
-import type { TaskInput } from '../../types/task'
+import type { Task, TaskInput } from '../../types/task'
 import styles from './ChatDrawer.module.css'
 
 export interface ChatDrawerProps {
   isOpen: boolean
   onClose: () => void
   onAddTask: (task: TaskInput) => void
+  tasks: Task[]
 }
 
-export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onAddTask }) => {
-  const { messages, sendMessage, isLoading } = useChat()
+export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onAddTask, tasks }) => {
+  const { messages, sendMessage, isLoading } = useChat(tasks)
   const [input, setInput] = useState('')
   const [isComposing, setIsComposing] = useState(false)
   const [attachedImage, setAttachedImage] = useState<string | null>(null)
