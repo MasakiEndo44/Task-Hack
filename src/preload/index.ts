@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import type { SweepStatus } from '../renderer/types/sweep'
 
 // Custom APIs for renderer
 const api = {
@@ -19,7 +20,21 @@ const api = {
     ipcRenderer.removeAllListeners('chat-chunk')
     ipcRenderer.removeAllListeners('chat-done')
     ipcRenderer.removeAllListeners('chat-error')
-  }
+  },
+  // Phase 4: Sweep
+  runSweep: () => ipcRenderer.invoke('sweep:run'),
+  onSweepProgress: (cb: (status: SweepStatus) => void) =>
+    ipcRenderer.on('sweep:progress', (_event, status) => cb(status)),
+  offSweepListeners: () => ipcRenderer.removeAllListeners('sweep:progress'),
+  // Phase 4: Vault
+  validateVaultPath: (path: string) => ipcRenderer.invoke('vault:validate', path),
+  selectVaultFolder: () => ipcRenderer.invoke('vault:selectFolder'),
+  // Phase 4: Profile
+  loadProfile: () => ipcRenderer.invoke('profile:load'),
+  // Phase 4: Echo / Soul
+  initEcho: (userName: string) => ipcRenderer.invoke('echo:init', userName),
+  loadSoul: () => ipcRenderer.invoke('soul:load'),
+  updateSoulStyle: (content: string) => ipcRenderer.invoke('soul:updateStyle', content),
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

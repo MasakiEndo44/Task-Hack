@@ -144,6 +144,112 @@
   to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 }
 
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-default);
+  padding: 0 var(--space-lg);
+  gap: 4px;
+}
+
+.tab {
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab:hover { color: var(--text-secondary); }
+
+.tab.active {
+  color: var(--text-primary);
+  border-bottom-color: var(--zone-active);
+}
+
+.tabContent {
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.textarea {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  resize: vertical;
+  min-height: 180px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sweepButton {
+  background: var(--zone-cleared, #2be92e);
+  border: none;
+  color: #111;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  align-self: flex-start;
+}
+
+.sweepButton:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.sweepMessage {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--zone-active);
+  min-height: 1.2em;
+  padding: 4px 0;
+}
+
+.pathValidation {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  margin-top: 4px;
+}
+
+.pathValidation.valid { background: rgba(43, 233, 46, 0.1); color: #2be92e; }
+.pathValidation.invalid { background: rgba(255, 80, 80, 0.1); color: #ff5050; }
+
+.inputRow { display: flex; gap: 8px; align-items: center; }
+
+.iconButton {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  border-radius: var(--radius-md);
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.iconButton:hover {
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+.iconButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .overlay, .modal {
     animation: none;

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import styles from './SettingsModal.module.css'
 
+type SettingsTab = 'general' | 'ai-secretary'
+
 interface SettingsModalProps {
   isOpen: boolean
   onClose: () => void
@@ -9,9 +11,16 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer = 25, onSaveSettings }: SettingsModalProps) {
+  const [activeTab, setActiveTab] = useState<SettingsTab>('general')
   const [obsidianPath, setObsidianPath] = useState('~/Documents/Obsidian/kecku_knowledge_brain/Task-Hack/')
+  const [sweepSchedule, setSweepSchedule] = useState('0 22 * * 0')
   const [defaultTimer, setDefaultTimer] = useState(propDefaultTimer)
   const [apiKey, setApiKey] = useState('')
+  const [userName, setUserName] = useState('')
+  const [soulContent, setSoulContent] = useState('')
+  const [pathValidation, setPathValidation] = useState<{ valid: boolean; error?: string } | null>(null)
+  const [isSweepRunning, setIsSweepRunning] = useState(false)
+  const [sweepMessage, setSweepMessage] = useState('')
 
   useEffect(() => {
     setDefaultTimer(propDefaultTimer)
@@ -19,15 +28,22 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
 
   useEffect(() => {
     if (isOpen) {
-      window.api.loadSettings().then((s: any) => setApiKey(s.openAiApiKey || ''))
+      window.api.loadSettings().then((s: any) => {
+        if (s.openAiApiKey) setApiKey(s.openAiApiKey)
+        if (s.timerDefault) setDefaultTimer(s.timerDefault)
+        if (s.obsidianVaultPath) setObsidianPath(s.obsidianVaultPath)
+        if (s.sweepSchedule) setSweepSchedule(s.sweepSchedule)
+        if (s.userName) setUserName(s.userName)
+      })
+      window.api.loadSoul().then((soul: string | null) => {
+        if (soul) setSoulContent(soul)
+      })
     }
   }, [isOpen])
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape' && isOpen) {
-        onClose()
-      }
+      if (e.key === 'Escape' && isOpen) onClose()
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
@@ -36,12 +52,52 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
   if (!isOpen) return null
 
   const handleSave = () => {
-    window.api.saveSettings({ openAiApiKey: apiKey }).then(() => {
-      if (onSaveSettings) {
-        onSaveSettings(defaultTimer)
-      }
+    window.api.saveSettings({
+      openAiApiKey: apiKey,
+      timerDefault: defaultTimer,
+      obsidianVaultPath: obsidianPath,
+      sweepSchedule,
+      userName: userName || undefined,
+    }).then(() => {
+      if (onSaveSettings) onSaveSettings(defaultTimer)
       onClose()
     })
+  }
+
+  const handleSelectFolder = async () => {
+    const selected = await window.api.selectVaultFolder()
+    if (selected) {
+      setObsidianPath(selected)
+      setPathValidation(null)
+    }
+  }
+
+  const handleValidateVault = async () => {
+    const result = await window.api.validateVaultPath(obsidianPath)
+    setPathValidation(result)
+  }
+
+  const handleInitEcho = async () => {
+    if (!userName.trim()) return
+    const soul = await window.api.initEcho(userName)
+    setSoulContent(soul)
+  }
+
+  const handleSaveSoulStyle = async () => {
+    await window.api.updateSoulStyle(soulContent)
+  }
+
+  const handleManualSweep = async () => {
+    setIsSweepRunning(true)
+    setSweepMessage('スイープを開始しています...')
+    window.api.onSweepProgress((status) => {
+      setSweepMessage(status.message)
+      if (status.phase === 'done' || status.phase === 'error') {
+        setIsSweepRunning(false)
+        window.api.offSweepListeners()
+      }
+    })
+    await window.api.runSweep()
   }
 
   return (
@@ -52,42 +108,134 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
           <h2>Settings</h2>
           <button className={styles.closeButton} onClick={onClose}>✕</button>
         </div>
-        
-        <div className={styles.body}>
-          <div className={styles.section}>
-            <label>OpenAI API Key</label>
-            <input 
-              type="password" 
-              value={apiKey} 
-              onChange={e => setApiKey(e.target.value)}
-              className={styles.input}
-              placeholder="sk-..."
-            />
-            <span className={styles.help}>AIチャット機能に使用するAPIキーです。</span>
-          </div>
 
-          <div className={styles.section}>
-            <label>Obsidian Vault パス</label>
-            <input 
-              type="text" 
-              value={obsidianPath} 
-              onChange={e => setObsidianPath(e.target.value)}
-              className={styles.input}
-              placeholder="/Users/.../Obsidian/..."
-            />
-            <span className={styles.help}>週次レポート(Phase 4)の出力先です。</span>
-          </div>
-
-          <div className={styles.section}>
-            <label>デフォルトタイマー (分)</label>
-            <input 
-              type="number" 
-              value={defaultTimer} 
-              onChange={e => setDefaultTimer(Number(e.target.value))}
-              className={styles.input}
-            />
-          </div>
+        <div className={styles.tabs}>
+          <button
+            className={`${styles.tab} ${activeTab === 'general' ? styles.active : ''}`}
+            onClick={() => setActiveTab('general')}
+          >
+            一般
+          </button>
+          <button
+            className={`${styles.tab} ${activeTab === 'ai-secretary' ? styles.active : ''}`}
+            onClick={() => setActiveTab('ai-secretary')}
+          >
+            AI秘書 (Echo)
+          </button>
         </div>
+
+        {activeTab === 'general' && (
+          <div className={styles.tabContent}>
+            <div className={styles.section}>
+              <label>OpenAI API Key</label>
+              <input
+                type="password"
+                value={apiKey}
+                onChange={e => setApiKey(e.target.value)}
+                className={styles.input}
+                placeholder="sk-..."
+              />
+              <span className={styles.help}>AIチャット・週次スイープに使用するAPIキーです。</span>
+            </div>
+
+            <div className={styles.section}>
+              <label>Obsidian Vault パス</label>
+              <div className={styles.inputRow}>
+                <input
+                  type="text"
+                  value={obsidianPath}
+                  onChange={e => { setObsidianPath(e.target.value); setPathValidation(null) }}
+                  placeholder="~/Documents/Obsidian/..."
+                  className={styles.input}
+                />
+                <button className={styles.iconButton} onClick={handleSelectFolder}>📁 選択</button>
+                <button className={styles.iconButton} onClick={handleValidateVault}>✓ 確認</button>
+              </div>
+              {pathValidation && (
+                <div className={`${styles.pathValidation} ${pathValidation.valid ? styles.valid : styles.invalid}`}>
+                  {pathValidation.valid ? '✓ フォルダを確認しました' : `⚠ ${pathValidation.error}`}
+                </div>
+              )}
+              <span className={styles.help}>週次レポートの出力先Obsidian Vaultフォルダです。</span>
+            </div>
+
+            <div className={styles.section}>
+              <label>スイープスケジュール (cron書式)</label>
+              <input
+                type="text"
+                value={sweepSchedule}
+                onChange={e => setSweepSchedule(e.target.value)}
+                className={styles.input}
+                placeholder="0 22 * * 0"
+              />
+              <span className={styles.help}>例: "0 22 * * 0" = 毎週日曜22時</span>
+            </div>
+
+            <div className={styles.section}>
+              <label>デフォルトタイマー (分)</label>
+              <input
+                type="number"
+                value={defaultTimer}
+                onChange={e => setDefaultTimer(Number(e.target.value))}
+                className={styles.input}
+              />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'ai-secretary' && (
+          <div className={styles.tabContent}>
+            <div className={styles.section}>
+              <label>Echoの初期化</label>
+              <div className={styles.inputRow}>
+                <input
+                  type="text"
+                  value={userName}
+                  onChange={e => setUserName(e.target.value)}
+                  placeholder="あなたの名前（例: みさき）"
+                  className={styles.input}
+                />
+                <button className={styles.iconButton} onClick={handleInitEcho} disabled={!userName.trim()}>
+                  Echoを初期化
+                </button>
+              </div>
+              <span className={styles.help}>初回のみ必要です。soul.mdが生成されます。</span>
+            </div>
+
+            {soulContent && (
+              <div className={styles.section}>
+                <label>EchoのSoul (soul.md)</label>
+                <textarea
+                  value={soulContent}
+                  onChange={e => setSoulContent(e.target.value)}
+                  className={styles.textarea}
+                  rows={8}
+                />
+                <div className={styles.inputRow} style={{ justifyContent: 'flex-end' }}>
+                  <button className={styles.iconButton} onClick={handleSaveSoulStyle}>
+                    スタイルを保存
+                  </button>
+                </div>
+                <span className={styles.help}>Style Extensionsセクション（ユーザーカスタマイズ部分）が保存されます。</span>
+              </div>
+            )}
+
+            <div className={styles.section}>
+              <label>週次スイープ</label>
+              <button
+                className={styles.sweepButton}
+                onClick={handleManualSweep}
+                disabled={isSweepRunning}
+              >
+                {isSweepRunning ? '実行中...' : '今すぐスイープを実行 🛬'}
+              </button>
+              {sweepMessage && (
+                <div className={styles.sweepMessage}>{sweepMessage}</div>
+              )}
+              <span className={styles.help}>CLEAREDタスクを集計・アーカイブし、週次レポートを生成します。</span>
+            </div>
+          </div>
+        )}
 
         <div className={styles.footer}>
           <button className={styles.cancelButton} onClick={onClose}>キャンセル</button>

@@ -1,6 +1,7 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTaskReducer } from './hooks/useTaskReducer'
-import type { ZoneType } from './types/task'
+import type { Task, ZoneType } from './types/task'
+import type { SweepStatus } from './types/sweep'
 import { Clock } from './components/Clock/Clock'
 import { StatusBar } from './components/StatusBar/StatusBar'
 import { Timeline } from './components/Timeline/Timeline'
@@ -93,6 +94,19 @@ function App(): React.JSX.Element {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [defaultTimer, setDefaultTimer] = useState(25)
+  const [sweepStatus, setSweepStatus] = useState<SweepStatus | null>(null)
+
+  useEffect(() => {
+    if (window.api?.onSweepProgress) {
+      window.api.onSweepProgress((status) => {
+        setSweepStatus(status)
+        if (status.phase === 'done') {
+          setTimeout(() => setSweepStatus(null), 4000)
+        }
+      })
+    }
+    return () => { window.api?.offSweepListeners?.() }
+  }, [])
 
   const handleComplete = useCallback((taskId: string) => {
     dispatch({ type: 'COMPLETE_TASK', payload: { taskId } })
@@ -116,7 +130,7 @@ function App(): React.JSX.Element {
     <div className={styles.app}>
       {/* 上部: ステータスバー + 時計 */}
       <header className={styles.header}>
-        <StatusBar zoneCounts={getZoneCounts()} />
+        <StatusBar zoneCounts={getZoneCounts()} sweepStatus={sweepStatus} />
         <div className={styles.headerRight}>
           <button
             className={`${styles.chatButton} ${isChatOpen ? styles.chatButtonActive : ''}`}
