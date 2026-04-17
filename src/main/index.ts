@@ -1,3 +1,7 @@
+// Corporate SSL inspection bypass: allows TLS connections to api.openai.com
+// through proxies that present self-signed certificates.
+process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0'
+
 import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import fs from 'fs/promises'
@@ -11,6 +15,20 @@ import { loadSoul, initEcho, updateSoulStyle } from './services/soulService'
 import { startScheduler, stopScheduler, checkAndRunCatchup, checkAndRunRecurringTasks } from './services/scheduler'
 import { processRecurringTasks } from './services/recurrenceService'
 import { suggestPriority } from './services/priorityService'
+
+function classifyOpenAIError(e: any): string {
+  const msg: string = e?.message ?? String(e)
+  if (e?.status === 401 || msg.includes('401') || msg.toLowerCase().includes('auth')) {
+    return 'APIキーが無効です。設定画面でAPIキーを確認してください。'
+  }
+  if (e?.status === 429 || msg.includes('429') || msg.toLowerCase().includes('rate limit')) {
+    return 'APIのレート制限に達しました。しばらく待ってから再試行してください。'
+  }
+  if (msg.toLowerCase().includes('connection') || msg.toLowerCase().includes('enotfound') || msg.toLowerCase().includes('econnrefused')) {
+    return 'OpenAI APIに接続できませんでした。インターネット接続とファイアウォール設定を確認してください。'
+  }
+  return `AI接続エラー: ${msg}`
+}
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -124,7 +142,19 @@ app.whenReady().then(async () => {
       }
       event.sender.send('chat-done')
     } catch (e: any) {
-      event.sender.send('chat-error', e.message)
+      const msg = classifyOpenAIError(e)
+      event.sender.send('chat-error', msg)
+    }
+  })
+
+  ipcMain.handle('testChatConnection', async (_, apiKey: string) => {
+    if (!apiKey) return { ok: false, error: 'APIキーが設定されていません' }
+    const openai = new OpenAI({ apiKey })
+    try {
+      await openai.models.list()
+      return { ok: true }
+    } catch (e: any) {
+      return { ok: false, error: classifyOpenAIError(e) }
     }
   })
 

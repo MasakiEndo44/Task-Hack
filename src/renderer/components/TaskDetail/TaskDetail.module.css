@@ -47,6 +47,40 @@
   font-weight: 600;
   margin: 0;
   line-height: 1.4;
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+}
+
+.title:hover .editHint {
+  opacity: 0.6;
+}
+
+.editHint {
+  font-size: 0.85rem;
+  opacity: 0;
+  color: var(--text-muted);
+  transition: opacity var(--transition-fast);
+  font-weight: 400;
+}
+
+.titleInput {
+  width: 100%;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-hover);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 1.4rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  line-height: 1.4;
+}
+
+.titleInput:focus {
+  outline: none;
+  border-color: var(--zone-next);
 }
 
 .section {
@@ -225,4 +259,79 @@
   background: var(--zone-cleared);
   color: var(--bg-primary);
   border-color: var(--zone-cleared);
+}
+
+/* Dependency */
+.depBlocked {
+  font-size: 0.82rem;
+  color: #f5a623;
+  line-height: 1.4;
+}
+
+/* Delete task */
+.deleteButton {
+  background: transparent;
+  border: 1px solid rgba(255, 59, 59, 0.35);
+  color: var(--priority-urgent);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.85rem;
+  width: 100%;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.deleteButton:hover {
+  background: rgba(255, 59, 59, 0.1);
+  border-color: var(--priority-urgent);
+}
+
+.deleteConfirm {
+  border: 1px solid rgba(255, 59, 59, 0.4);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  background: rgba(255, 59, 59, 0.06);
+}
+
+.deleteWarning {
+  margin: 0 0 var(--space-md);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.deleteActions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.deleteConfirmButton {
+  flex: 1;
+  background: rgba(255, 59, 59, 0.2);
+  border: 1px solid var(--priority-urgent);
+  color: var(--priority-urgent);
+  padding: var(--space-sm);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+  transition: background var(--transition-fast);
+}
+
+.deleteConfirmButton:hover {
+  background: rgba(255, 59, 59, 0.35);
+}
+
+.deleteCancelButton {
+  flex: 1;
+  background: transparent;
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  padding: var(--space-sm);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.deleteCancelButton:hover {
+  background: var(--bg-elevated);
 }

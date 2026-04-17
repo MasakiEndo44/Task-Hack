@@ -39,6 +39,8 @@ const api = {
   checkRecurringTasks: (tasks: any[]) => ipcRenderer.invoke('recurrence:check', tasks),
   // Phase 5: Priority
   suggestPriority: (tasks: any[]) => ipcRenderer.invoke('priority:suggest', tasks),
+  // Connection test
+  testChatConnection: (apiKey: string) => ipcRenderer.invoke('testChatConnection', apiKey),
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

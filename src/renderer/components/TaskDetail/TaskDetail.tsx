@@ -4,11 +4,16 @@ import styles from './TaskDetail.module.css'
 
 interface TaskDetailProps {
   task: Task
+  allTasks?: Task[]
   onUpdate: (taskId: string, updates: Partial<Task>) => void
+  onDelete?: (taskId: string) => void
 }
 
-export function TaskDetail({ task, onUpdate }: TaskDetailProps) {
+export function TaskDetail({ task, allTasks = [], onUpdate, onDelete }: TaskDetailProps) {
   const [estimatedTime, setEstimatedTime] = useState(task.estimatedTime || 25)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [titleDraft, setTitleDraft] = useState(task.title)
   const [notes, setNotes] = useState(task.notes || '')
   const [scheduledStartDate, setScheduledStartDate] = useState(task.scheduledStart ? task.scheduledStart.split('T')[0] : '')
   const [subtasks, setSubtasks] = useState(task.subtasks || [])
@@ -19,6 +24,9 @@ export function TaskDetail({ task, onUpdate }: TaskDetailProps) {
 
   // taskが切り替わったら初期値をリセット
   useEffect(() => {
+    setShowDeleteConfirm(false)
+    setIsEditingTitle(false)
+    setTitleDraft(task.title)
     setEstimatedTime(task.estimatedTime || 25)
     setNotes(task.notes || '')
     setScheduledStartDate(task.scheduledStart ? task.scheduledStart.split('T')[0] : '')
@@ -28,6 +36,21 @@ export function TaskDetail({ task, onUpdate }: TaskDetailProps) {
     setRecurrenceDayOfWeek(task.recurrence?.dayOfWeek ?? 1)
     setRecurrenceDayOfMonth(task.recurrence?.dayOfMonth ?? 1)
   }, [task.id, task.estimatedTime, task.notes, task.scheduledStart, task.subtasks, task.recurrence])
+
+  const handleTitleCommit = () => {
+    const trimmed = titleDraft.trim()
+    if (trimmed && trimmed !== task.title) {
+      onUpdate(task.id, { title: trimmed })
+    } else {
+      setTitleDraft(task.title)
+    }
+    setIsEditingTitle(false)
+  }
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') handleTitleCommit()
+    if (e.key === 'Escape') { setTitleDraft(task.title); setIsEditingTitle(false) }
+  }
 
   const handleToggleSubtask = (id: string) => {
     const newSubtasks = subtasks.map(st => st.id === id ? { ...st, completed: !st.completed } : st)
@@ -112,7 +135,25 @@ export function TaskDetail({ task, onUpdate }: TaskDetailProps) {
       </div>
 
       <div className={styles.titleSection}>
-        <h3 className={styles.title}>{task.title}</h3>
+        {isEditingTitle ? (
+          <input
+            className={styles.titleInput}
+            value={titleDraft}
+            onChange={e => setTitleDraft(e.target.value)}
+            onBlur={handleTitleCommit}
+            onKeyDown={handleTitleKeyDown}
+            autoFocus
+          />
+        ) : (
+          <h3
+            className={styles.title}
+            onClick={() => setIsEditingTitle(true)}
+            title="クリックして名前を変更"
+          >
+            {task.title}
+            <span className={styles.editHint}>✎</span>
+          </h3>
+        )}
       </div>
 
       <div className={styles.section}>
@@ -224,6 +265,64 @@ export function TaskDetail({ task, onUpdate }: TaskDetailProps) {
           </select>
         )}
       </div>
+      {allTasks.length > 1 && (
+        <div className={styles.section}>
+          <label className={styles.label}>🔗 前提タスク（このタスクの前に完了が必要）</label>
+          <select
+            className={styles.select}
+            value={task.dependsOn ?? ''}
+            onChange={e => onUpdate(task.id, { dependsOn: e.target.value || undefined })}
+          >
+            <option value="">なし</option>
+            {allTasks
+              .filter(t => t.id !== task.id && t.zone !== 'CLEARED')
+              .map(t => (
+                <option key={t.id} value={t.id}>
+                  {t.id} — {t.title}
+                </option>
+              ))}
+          </select>
+          {task.dependsOn && (() => {
+            const dep = allTasks.find(t => t.id === task.dependsOn)
+            return dep && dep.zone !== 'CLEARED'
+              ? <span className={styles.depBlocked}>⚠ 「{dep.title}」が完了するまでACTIVEに移動できません</span>
+              : null
+          })()}
+        </div>
+      )}
+
+      {onDelete && (
+        <div className={styles.section}>
+          {!showDeleteConfirm ? (
+            <button
+              className={styles.deleteButton}
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              このタスクを削除
+            </button>
+          ) : (
+            <div className={styles.deleteConfirm}>
+              <p className={styles.deleteWarning}>
+                このタスクを削除しますか？削除すると元に戻せません。
+              </p>
+              <div className={styles.deleteActions}>
+                <button
+                  className={styles.deleteConfirmButton}
+                  onClick={() => onDelete(task.id)}
+                >
+                  削除する
+                </button>
+                <button
+                  className={styles.deleteCancelButton}
+                  onClick={() => setShowDeleteConfirm(false)}
+                >
+                  キャンセル
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

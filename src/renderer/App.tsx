@@ -136,6 +136,11 @@ function App(): React.JSX.Element {
     dispatch({ type: 'UPDATE_TASK', payload: { taskId, updates } })
   }, [dispatch])
 
+  const handleDeleteTask = useCallback((taskId: string) => {
+    dispatch({ type: 'DELETE_TASK', payload: { taskId } })
+    setSelectedTaskId(null)
+  }, [dispatch])
+
   const handleRegisterInjectMessage = useCallback((fn: (text: string) => void) => {
     injectEchoMessageRef.current = fn
   }, [])
@@ -227,6 +232,7 @@ function App(): React.JSX.Element {
           <Timeline tasks={tasks} />
           <Dashboard
             tasksByZone={getTasksByZone()}
+            allTasks={tasks}
             onComplete={handleComplete}
             onUndoComplete={handleUndoComplete}
             onMoveTask={handleMoveTask}
@@ -242,12 +248,14 @@ function App(): React.JSX.Element {
       <Drawer
         isOpen={selectedTaskId !== null}
         onClose={() => setSelectedTaskId(null)}
-        title={selectedTask ? `Task Details: ${selectedTask.id}` : ''}
+        title={selectedTask ? `${selectedTask.id} — ${selectedTask.title}` : ''}
       >
         {selectedTask && (
           <TaskDetail
             task={selectedTask}
+            allTasks={tasks}
             onUpdate={handleUpdateTask}
+            onDelete={handleDeleteTask}
           />
         )}
       </Drawer>
