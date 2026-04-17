@@ -7,6 +7,15 @@
   background: var(--bg-primary);
 }
 
+/* サイドバー + メインコンテンツの横並びラッパー */
+.body {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .header {
   display: flex;
   align-items: center;
@@ -40,33 +49,34 @@
 .main {
   flex: 1;
   display: flex;
+  flex-direction: column;
   min-height: 0;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-width: 0;
 }
 
-.chatFab {
-  position: fixed;
-  bottom: var(--space-xl);
-  right: var(--space-xl);
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
+.chatButton {
+  background: transparent;
+  border: 1px solid var(--zone-active);
+  color: var(--zone-active);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: bold;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  letter-spacing: 0.05em;
+}
+
+.chatButton:hover {
   background: var(--zone-active);
   color: var(--bg-primary);
-  border: none;
-  font-family: var(--font-mono);
-  font-weight: bold;
-  font-size: 1.2rem;
-  cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 12px var(--zone-active-glow);
-  z-index: 50;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  box-shadow: 0 0 8px var(--zone-active-glow);
 }
 
-.chatFab:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 16px var(--zone-active-glow);
+.chatButtonActive {
+  background: var(--zone-active);
+  color: var(--bg-primary);
 }

@@ -1,24 +1,45 @@
-.drawer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 50vh;
-  min-height: 400px;
+/* ── サイドバー本体 ── */
+.sidebar {
+  position: relative;
+  height: 100%;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: width 0.25s ease;
   background: var(--bg-secondary);
-  border-top: 1px solid var(--border-default);
-  transform: translateY(100%);
-  transition: transform var(--transition-normal);
+  border-right: 1px solid var(--border-default);
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+/* サイドバー内コンテンツ */
+.inner {
   display: flex;
   flex-direction: column;
-  z-index: var(--z-modal);
-  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 
-.drawerOpen {
-  transform: translateY(0);
+/* ── リサイズハンドル ── */
+.resizeHandle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 20;
+  background: transparent;
+  transition: background var(--transition-fast);
 }
 
+.resizeHandle:hover,
+.resizeHandle:active {
+  background: var(--zone-active);
+  opacity: 0.6;
+}
+
+/* ── ヘッダー ── */
 .header {
   display: flex;
   justify-content: space-between;
@@ -26,6 +47,7 @@
   padding: var(--space-sm) var(--space-md);
   border-bottom: 1px solid var(--border-default);
   background: var(--bg-surface);
+  flex-shrink: 0;
 }
 
 .title {
@@ -35,6 +57,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-sm);
+  white-space: nowrap;
 }
 
 .statusIndicator {
@@ -43,6 +66,7 @@
   border-radius: 50%;
   background: var(--zone-active);
   box-shadow: 0 0 8px var(--zone-active-glow);
+  flex-shrink: 0;
 }
 
 .closeButton {
@@ -50,15 +74,17 @@
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   padding: var(--space-xs);
   transition: color var(--transition-fast);
+  flex-shrink: 0;
 }
 
 .closeButton:hover {
   color: var(--text-primary);
 }
 
+/* ── メッセージ履歴 ── */
 .history {
   flex: 1;
   overflow-y: auto;
@@ -66,16 +92,36 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
+  /* thin scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-default) transparent;
+}
+
+.history::-webkit-scrollbar {
+  width: 4px;
+}
+.history::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 2px;
+}
+
+.emptyState {
+  align-self: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: var(--space-xl) 0;
 }
 
 .message {
-  max-width: 80%;
+  max-width: 100%;
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-md);
   font-family: var(--font-ui);
-  line-height: 1.5;
-  word-break: break-all;
+  line-height: 1.6;
+  word-break: break-word;
   white-space: pre-wrap;
+  font-size: 0.9rem;
 }
 
 .messageUser {
@@ -83,6 +129,7 @@
   background: var(--bg-elevated);
   color: var(--text-primary);
   border-bottom-right-radius: 0;
+  max-width: 85%;
 }
 
 .messageAssistant {
@@ -91,6 +138,16 @@
   border: 1px solid var(--border-default);
   color: var(--text-primary);
   border-bottom-left-radius: 0;
+}
+
+.messageImage {
+  display: block;
+  max-width: 100%;
+  max-height: 160px;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-xs);
+  border: 1px solid var(--border-default);
 }
 
 .loading {
@@ -109,11 +166,12 @@
 .dot:nth-child(3) { animation-delay: 0.4s; }
 
 @keyframes blink {
-  0% { opacity: 0.2; }
-  20% { opacity: 1; }
+  0%   { opacity: 0.2; }
+  20%  { opacity: 1; }
   100% { opacity: 0.2; }
 }
 
+/* ── 入力エリア ── */
 .inputArea {
   padding: var(--space-sm) var(--space-md) var(--space-md);
   border-top: 1px solid var(--border-default);
@@ -121,17 +179,18 @@
   flex-direction: column;
   gap: var(--space-sm);
   background: var(--bg-surface);
+  flex-shrink: 0;
 }
 
 .imagePreview {
   position: relative;
-  width: 80px;
+  width: 72px;
   flex-shrink: 0;
 }
 
 .previewImage {
-  width: 80px;
-  height: 60px;
+  width: 72px;
+  height: 54px;
   object-fit: cover;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-default);
@@ -149,13 +208,12 @@
   border: 1px solid var(--border-default);
   color: var(--text-secondary);
   font-size: 12px;
-  line-height: 1;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition: background var(--transition-fast);
 }
 
 .removeImageBtn:hover {
@@ -177,7 +235,7 @@
   cursor: pointer;
   font-size: 1rem;
   padding: 0 var(--space-sm);
-  height: 48px;
+  height: 44px;
   transition: all var(--transition-fast);
   flex-shrink: 0;
 }
@@ -200,9 +258,11 @@
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-sm);
   font-family: var(--font-ui);
+  font-size: 0.9rem;
   transition: border-color var(--transition-fast);
   resize: none;
-  height: 48px;
+  height: 44px;
+  min-width: 0;
 }
 
 .input:focus {
@@ -211,26 +271,17 @@
   box-shadow: 0 0 0 1px var(--zone-active-glow);
 }
 
-.messageImage {
-  display: block;
-  max-width: 200px;
-  max-height: 150px;
-  object-fit: contain;
-  border-radius: var(--radius-sm);
-  margin-bottom: var(--space-xs);
-  border: 1px solid var(--border-default);
-}
-
 .sendButton {
   background: var(--bg-elevated);
   color: var(--zone-active);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
-  padding: 0 var(--space-lg);
+  padding: 0 var(--space-md);
   font-family: var(--font-mono);
+  font-size: 0.85rem;
   cursor: pointer;
   transition: all var(--transition-fast);
-  height: 48px;
+  height: 44px;
   flex-shrink: 0;
 }
 
@@ -241,7 +292,7 @@
 }
 
 .sendButton:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
   color: var(--text-muted);
 }
