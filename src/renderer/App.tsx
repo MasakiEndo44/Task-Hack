@@ -118,8 +118,15 @@ function App(): React.JSX.Element {
       <header className={styles.header}>
         <StatusBar zoneCounts={getZoneCounts()} />
         <div className={styles.headerRight}>
-          <button 
-            className={styles.settingsButton} 
+          <button
+            className={`${styles.chatButton} ${isChatOpen ? styles.chatButtonActive : ''}`}
+            onClick={() => setIsChatOpen(prev => !prev)}
+            aria-label="AI Co-planner を開く"
+          >
+            AI
+          </button>
+          <button
+            className={styles.settingsButton}
             onClick={() => setIsSettingsOpen(true)}
             aria-label="設定"
           >
@@ -129,20 +136,29 @@ function App(): React.JSX.Element {
         </div>
       </header>
 
-      {/* タイムライン */}
-      <Timeline tasks={tasks} />
-
-      {/* メイン: 4ゾーンダッシュボード */}
-      <main className={styles.main}>
-        <Dashboard
-          tasksByZone={getTasksByZone()}
-          onComplete={handleComplete}
-          onUndoComplete={handleUndoComplete}
-          onMoveTask={handleMoveTask}
-          onClickTask={setSelectedTaskId}
-          defaultTimer={defaultTimer}
+      {/* サイドバー + コンテンツ横並びラッパー */}
+      <div className={styles.body}>
+        {/* AIチャットサイドバー */}
+        <ChatDrawer
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          onAddTask={(payload) => dispatch({ type: 'ADD_TASK', payload })}
+          tasks={tasks}
         />
-      </main>
+
+        {/* タイムライン + ダッシュボード */}
+        <main className={styles.main}>
+          <Timeline tasks={tasks} />
+          <Dashboard
+            tasksByZone={getTasksByZone()}
+            onComplete={handleComplete}
+            onUndoComplete={handleUndoComplete}
+            onMoveTask={handleMoveTask}
+            onClickTask={setSelectedTaskId}
+            defaultTimer={defaultTimer}
+          />
+        </main>
+      </div>
 
       {/* タスク詳細ドロワー */}
       <Drawer
@@ -166,23 +182,6 @@ function App(): React.JSX.Element {
         onSaveSettings={(timer) => setDefaultTimer(timer)}
       />
 
-      {/* AIチャットドロワー */}
-      <ChatDrawer 
-        isOpen={isChatOpen} 
-        onClose={() => setIsChatOpen(false)} 
-        onAddTask={(payload) => dispatch({ type: 'ADD_TASK', payload })}
-      />
-      
-      {/* AIチャット起動ボタン */}
-      {!isChatOpen && (
-        <button 
-          className={styles.chatFab}
-          onClick={() => setIsChatOpen(true)}
-          aria-label="Open AI Co-planner"
-        >
-          AI
-        </button>
-      )}
     </div>
   )
 }

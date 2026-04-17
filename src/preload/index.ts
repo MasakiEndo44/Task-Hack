@@ -7,7 +7,19 @@ const api = {
   saveTasks: (tasks: any) => ipcRenderer.invoke('saveTasks', tasks),
   loadSettings: () => ipcRenderer.invoke('loadSettings'),
   saveSettings: (settings: any) => ipcRenderer.invoke('saveSettings', settings),
-  chatCompletion: (messages: any, apiKey: string) => ipcRenderer.invoke('chatCompletion', messages, apiKey)
+  startChatStream: (messages: any, systemPrompt: string, apiKey: string) =>
+    ipcRenderer.invoke('startChatStream', messages, systemPrompt, apiKey),
+  onChatChunk: (cb: (text: string) => void) =>
+    ipcRenderer.on('chat-chunk', (_event, text) => cb(text)),
+  onChatDone: (cb: () => void) =>
+    ipcRenderer.on('chat-done', () => cb()),
+  onChatError: (cb: (msg: string) => void) =>
+    ipcRenderer.on('chat-error', (_event, msg) => cb(msg)),
+  offChatListeners: () => {
+    ipcRenderer.removeAllListeners('chat-chunk')
+    ipcRenderer.removeAllListeners('chat-done')
+    ipcRenderer.removeAllListeners('chat-error')
+  }
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

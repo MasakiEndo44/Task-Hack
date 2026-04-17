@@ -89,17 +89,25 @@ app.whenReady().then(() => {
     }
   })
 
-  ipcMain.handle('chatCompletion', async (_, messages, apiKey) => {
+  ipcMain.handle('startChatStream', async (event, messages, systemPrompt, apiKey) => {
     if (!apiKey) throw new Error('API Key missing')
     const openai = new OpenAI({ apiKey })
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: 'You are Task-Hack AI, an ATC assistant. When proposing a task to the user, strictly output JSON wrapped in ```json ... ``` blocks.' },
-        ...messages
-      ]
-    })
-    return completion.choices[0].message.content
+    try {
+      const stream = openai.chat.completions.stream({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...messages
+        ]
+      })
+      for await (const chunk of stream) {
+        const text = chunk.choices[0]?.delta?.content || ''
+        if (text) event.sender.send('chat-chunk', text)
+      }
+      event.sender.send('chat-done')
+    } catch (e: any) {
+      event.sender.send('chat-error', e.message)
+    }
   })
 
   app.on('activate', function () {
