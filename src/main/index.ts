@@ -1,7 +1,14 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import fs from 'fs/promises'
 import { is } from '@electron-toolkit/utils'
+import OpenAI from 'openai'
+import { DEFAULT_SETTINGS } from './types/settings'
+import { runSweep } from './services/sweepService'
+import { validateVaultPath } from './services/vaultService'
+import { loadAllProfile } from './services/profileService'
+import { loadSoul, initEcho, updateSoulStyle } from './services/soulService'
+import { startScheduler, stopScheduler, checkAndRunCatchup } from './services/scheduler'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -37,11 +44,22 @@ function createWindow(): void {
   }
 }
 
-app.whenReady().then(() => {
+async function loadCurrentSettings() {
+  const settingsFile = join(app.getPath('home'), '.task-hack', 'settings.json')
+  try {
+    const data = await fs.readFile(settingsFile, 'utf-8')
+    return { ...DEFAULT_SETTINGS, ...JSON.parse(data) }
+  } catch {
+    return { ...DEFAULT_SETTINGS }
+  }
+}
+
+app.whenReady().then(async () => {
   createWindow()
 
   const dataDir = join(app.getPath('home'), '.task-hack')
   const tasksFile = join(dataDir, 'tasks.json')
+  const settingsFile = join(dataDir, 'settings.json')
 
   ipcMain.handle('loadTasks', async () => {
     try {
@@ -67,6 +85,87 @@ app.whenReady().then(() => {
     }
   })
 
+  ipcMain.handle('loadSettings', async () => {
+    try {
+      await fs.mkdir(dataDir, { recursive: true })
+      const data = await fs.readFile(settingsFile, 'utf-8')
+      return JSON.parse(data)
+    } catch (err: any) {
+      return { openAiApiKey: '' }
+    }
+  })
+
+  ipcMain.handle('saveSettings', async (_, settings) => {
+    try {
+      await fs.mkdir(dataDir, { recursive: true })
+      await fs.writeFile(settingsFile, JSON.stringify(settings, null, 2), 'utf-8')
+    } catch (err) {
+      console.error('Failed to save settings:', err)
+      throw err
+    }
+  })
+
+  ipcMain.handle('startChatStream', async (event, messages, systemPrompt, apiKey) => {
+    if (!apiKey) throw new Error('API Key missing')
+    const openai = new OpenAI({ apiKey })
+    try {
+      const stream = openai.chat.completions.stream({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...messages
+        ]
+      })
+      for await (const chunk of stream) {
+        const text = chunk.choices[0]?.delta?.content || ''
+        if (text) event.sender.send('chat-chunk', text)
+      }
+      event.sender.send('chat-done')
+    } catch (e: any) {
+      event.sender.send('chat-error', e.message)
+    }
+  })
+
+  // Phase 4: Sweep
+  ipcMain.handle('sweep:run', async () => {
+    const settings = await loadCurrentSettings()
+    await runSweep(settings)
+  })
+
+  // Phase 4: Vault
+  ipcMain.handle('vault:validate', async (_, vaultPath: string) => {
+    return validateVaultPath(vaultPath)
+  })
+
+  ipcMain.handle('vault:selectFolder', async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openDirectory'],
+      title: 'Obsidian Vaultフォルダを選択してください'
+    })
+    return result.canceled ? null : result.filePaths[0]
+  })
+
+  // Phase 4: Profile
+  ipcMain.handle('profile:load', async () => {
+    return loadAllProfile()
+  })
+
+  // Phase 4: Echo / Soul
+  ipcMain.handle('echo:init', async (_, userName: string) => {
+    return initEcho(userName)
+  })
+  ipcMain.handle('soul:load', async () => {
+    return loadSoul()
+  })
+  ipcMain.handle('soul:updateStyle', async (_, content: string) => {
+    return updateSoulStyle(content)
+  })
+
+  // Phase 4: スケジューラー起動
+  const settings = await loadCurrentSettings()
+  startScheduler(settings, loadCurrentSettings)
+  await checkAndRunCatchup(settings, loadCurrentSettings)
+
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
@@ -76,4 +175,8 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+
+app.on('before-quit', () => {
+  stopScheduler()
 })

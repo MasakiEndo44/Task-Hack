@@ -1,0 +1,205 @@
+.proposalCard {
+  background: var(--bg-surface);
+  border: 1px solid var(--zone-next);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  margin-top: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.badge {
+  background: var(--zone-next);
+  color: var(--bg-primary);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: bold;
+}
+
+.totalTime {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+/* ── タスクリスト ── */
+.taskList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.taskItem {
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  padding: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: opacity var(--transition-fast);
+}
+
+.taskDone {
+  opacity: 0.4;
+}
+
+/* ── タスクヘッダー行 ── */
+.taskHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.taskMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex: 1;
+  min-width: 0;
+}
+
+.priority {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.urg {
+  background: var(--zone-active);
+  color: var(--bg-primary);
+}
+
+.nrm {
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  border: 1px solid var(--border-default);
+}
+
+.taskTitle {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.est {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ── 個別追加ボタン（白・目立つ） ── */
+.approveOneBtn {
+  background: #ffffff;
+  border: 1.5px solid #ffffff;
+  color: #0a0e17;
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: bold;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.approveOneBtn:hover:not(:disabled) {
+  background: var(--zone-next);
+  border-color: var(--zone-next);
+  color: var(--bg-primary);
+  box-shadow: 0 0 8px var(--zone-next-glow, rgba(0, 200, 150, 0.4));
+}
+
+.approveOneBtn:disabled {
+  background: transparent;
+  border-color: var(--border-default);
+  color: var(--text-muted);
+  cursor: default;
+  font-weight: normal;
+}
+
+/* ── タスク詳細（着手日・サブタスク・メモ） ── */
+.taskDetail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: var(--space-sm);
+  border-left: 2px solid var(--border-default);
+}
+
+.scheduledStart {
+  font-size: 0.78rem;
+  color: var(--zone-next);
+  font-family: var(--font-mono);
+}
+
+.subtasks {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.subtasks li {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.notes {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* ── 全件追加ボタン ── */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-xs);
+}
+
+.approveBtn {
+  background: var(--bg-elevated);
+  border: 1px solid var(--zone-next);
+  color: var(--zone-next);
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.approveBtn:hover:not(:disabled) {
+  background: var(--zone-next);
+  color: var(--bg-primary);
+  box-shadow: 0 0 12px var(--zone-next-glow, rgba(0, 200, 150, 0.4));
+}
+
+.approveBtn:disabled {
+  background: transparent;
+  color: var(--text-muted);
+  border-color: var(--border-default);
+  cursor: default;
+}

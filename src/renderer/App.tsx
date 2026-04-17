@@ -1,6 +1,7 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTaskReducer } from './hooks/useTaskReducer'
-import type { ZoneType } from './types/task'
+import type { Task, ZoneType } from './types/task'
+import type { SweepStatus } from './types/sweep'
 import { Clock } from './components/Clock/Clock'
 import { StatusBar } from './components/StatusBar/StatusBar'
 import { Timeline } from './components/Timeline/Timeline'
@@ -8,6 +9,7 @@ import { Dashboard } from './components/Dashboard/Dashboard'
 import { Drawer } from './components/Drawer/Drawer'
 import { TaskDetail } from './components/TaskDetail/TaskDetail'
 import { SettingsModal } from './components/SettingsModal/SettingsModal'
+import { ChatDrawer } from './components/ChatDrawer/ChatDrawer'
 import styles from './App.module.css'
 
 // デモ用サンプルタスク（開発時の動作確認用）
@@ -90,7 +92,21 @@ function App(): React.JSX.Element {
   const { tasks, dispatch, getTasksByZone, getZoneCounts } = useTaskReducer(DEMO_TASKS)
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isChatOpen, setIsChatOpen] = useState(false)
   const [defaultTimer, setDefaultTimer] = useState(25)
+  const [sweepStatus, setSweepStatus] = useState<SweepStatus | null>(null)
+
+  useEffect(() => {
+    if (window.api?.onSweepProgress) {
+      window.api.onSweepProgress((status) => {
+        setSweepStatus(status)
+        if (status.phase === 'done') {
+          setTimeout(() => setSweepStatus(null), 4000)
+        }
+      })
+    }
+    return () => { window.api?.offSweepListeners?.() }
+  }, [])
 
   const handleComplete = useCallback((taskId: string) => {
     dispatch({ type: 'COMPLETE_TASK', payload: { taskId } })
@@ -114,10 +130,17 @@ function App(): React.JSX.Element {
     <div className={styles.app}>
       {/* 上部: ステータスバー + 時計 */}
       <header className={styles.header}>
-        <StatusBar zoneCounts={getZoneCounts()} />
+        <StatusBar zoneCounts={getZoneCounts()} sweepStatus={sweepStatus} />
         <div className={styles.headerRight}>
-          <button 
-            className={styles.settingsButton} 
+          <button
+            className={`${styles.chatButton} ${isChatOpen ? styles.chatButtonActive : ''}`}
+            onClick={() => setIsChatOpen(prev => !prev)}
+            aria-label="AI Co-planner を開く"
+          >
+            AI
+          </button>
+          <button
+            className={styles.settingsButton}
             onClick={() => setIsSettingsOpen(true)}
             aria-label="設定"
           >
@@ -127,20 +150,29 @@ function App(): React.JSX.Element {
         </div>
       </header>
 
-      {/* タイムライン */}
-      <Timeline tasks={tasks} />
-
-      {/* メイン: 4ゾーンダッシュボード */}
-      <main className={styles.main}>
-        <Dashboard
-          tasksByZone={getTasksByZone()}
-          onComplete={handleComplete}
-          onUndoComplete={handleUndoComplete}
-          onMoveTask={handleMoveTask}
-          onClickTask={setSelectedTaskId}
-          defaultTimer={defaultTimer}
+      {/* サイドバー + コンテンツ横並びラッパー */}
+      <div className={styles.body}>
+        {/* AIチャットサイドバー */}
+        <ChatDrawer
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          onAddTask={(payload) => dispatch({ type: 'ADD_TASK', payload })}
+          tasks={tasks}
         />
-      </main>
+
+        {/* タイムライン + ダッシュボード */}
+        <main className={styles.main}>
+          <Timeline tasks={tasks} />
+          <Dashboard
+            tasksByZone={getTasksByZone()}
+            onComplete={handleComplete}
+            onUndoComplete={handleUndoComplete}
+            onMoveTask={handleMoveTask}
+            onClickTask={setSelectedTaskId}
+            defaultTimer={defaultTimer}
+          />
+        </main>
+      </div>
 
       {/* タスク詳細ドロワー */}
       <Drawer
@@ -163,6 +195,7 @@ function App(): React.JSX.Element {
         defaultTimer={defaultTimer}
         onSaveSettings={(timer) => setDefaultTimer(timer)}
       />
+
     </div>
   )
 }
