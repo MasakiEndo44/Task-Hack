@@ -8,7 +8,9 @@ import { runSweep } from './services/sweepService'
 import { validateVaultPath } from './services/vaultService'
 import { loadAllProfile } from './services/profileService'
 import { loadSoul, initEcho, updateSoulStyle } from './services/soulService'
-import { startScheduler, stopScheduler, checkAndRunCatchup } from './services/scheduler'
+import { startScheduler, stopScheduler, checkAndRunCatchup, checkAndRunRecurringTasks } from './services/scheduler'
+import { processRecurringTasks } from './services/recurrenceService'
+import { suggestPriority } from './services/priorityService'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -161,10 +163,24 @@ app.whenReady().then(async () => {
     return updateSoulStyle(content)
   })
 
+  // Phase 5: 繰り返しタスクチェック
+  ipcMain.handle('recurrence:check', async (_, tasks) => {
+    return processRecurringTasks(tasks)
+  })
+
+  // Phase 5: 優先度提案
+  ipcMain.handle('priority:suggest', async (_, tasks) => {
+    const s = await loadCurrentSettings()
+    return suggestPriority(s.openAiApiKey ?? '', tasks)
+  })
+
   // Phase 4: スケジューラー起動
   const settings = await loadCurrentSettings()
   startScheduler(settings, loadCurrentSettings)
   await checkAndRunCatchup(settings, loadCurrentSettings)
+
+  // Phase 5: 起動時繰り返しタスクチェック
+  await checkAndRunRecurringTasks()
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

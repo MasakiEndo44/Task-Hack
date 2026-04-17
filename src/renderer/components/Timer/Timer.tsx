@@ -1,8 +1,11 @@
 import { useTimer } from '../../hooks/useTimer'
+import type { TimerCallbacks } from '../../hooks/useTimer'
 import styles from './Timer.module.css'
 
 interface TimerProps {
   initialMinutes?: number
+  taskTitle?: string
+  callbacks?: TimerCallbacks
 }
 
 function formatTime(seconds: number) {
@@ -11,8 +14,8 @@ function formatTime(seconds: number) {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
-export function Timer({ initialMinutes = 25 }: TimerProps) {
-  const { state, remainingTime, progress, start, pause, reset } = useTimer(initialMinutes)
+export function Timer({ initialMinutes = 25, taskTitle = '', callbacks }: TimerProps) {
+  const { state, remainingTime, progress, start, pause, reset } = useTimer(initialMinutes, callbacks, taskTitle)
 
   return (
     <div className={`${styles.timer} ${styles[state]}`}>

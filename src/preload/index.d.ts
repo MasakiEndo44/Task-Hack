@@ -25,6 +25,10 @@ export interface IElectronAPI {
   initEcho: (userName: string) => Promise<string>
   loadSoul: () => Promise<string | null>
   updateSoulStyle: (content: string) => Promise<void>
+  // Phase 5: Recurrence
+  checkRecurringTasks: (tasks: Task[]) => Promise<{ generated: Task[]; updatedTemplates: Task[] }>
+  // Phase 5: Priority
+  suggestPriority: (tasks: Task[]) => Promise<{ proposals: Array<{ taskId: string; title: string; suggestedZone: string; reason: string }>; summary: string }>
 }
 
 declare global {

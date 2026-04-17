@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTaskReducer } from './hooks/useTaskReducer'
 import type { Task, ZoneType } from './types/task'
 import type { SweepStatus } from './types/sweep'
@@ -95,6 +95,7 @@ function App(): React.JSX.Element {
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [defaultTimer, setDefaultTimer] = useState(25)
   const [sweepStatus, setSweepStatus] = useState<SweepStatus | null>(null)
+  const injectEchoMessageRef = useRef<((text: string) => void) | null>(null)
 
   useEffect(() => {
     if (window.api?.onSweepProgress) {
@@ -108,9 +109,20 @@ function App(): React.JSX.Element {
     return () => { window.api?.offSweepListeners?.() }
   }, [])
 
-  const handleComplete = useCallback((taskId: string) => {
+  const handleComplete = useCallback(async (taskId: string) => {
     dispatch({ type: 'COMPLETE_TASK', payload: { taskId } })
-  }, [dispatch])
+    if (window.api?.checkRecurringTasks) {
+      const result = await window.api.checkRecurringTasks(tasks)
+      if (result.generated.length > 0) {
+        result.generated.forEach((task: Task) => {
+          dispatch({ type: 'ADD_TASK', payload: { ...task } })
+        })
+        result.updatedTemplates.forEach((updated: Task) => {
+          dispatch({ type: 'UPDATE_TASK', payload: { taskId: updated.id, updates: updated } })
+        })
+      }
+    }
+  }, [dispatch, tasks])
 
   const handleUndoComplete = useCallback((taskId: string) => {
     dispatch({ type: 'UNDO_COMPLETE', payload: { taskId } })
@@ -123,6 +135,55 @@ function App(): React.JSX.Element {
   const handleUpdateTask = useCallback((taskId: string, updates: Partial<Task>) => {
     dispatch({ type: 'UPDATE_TASK', payload: { taskId, updates } })
   }, [dispatch])
+
+  const handleRegisterInjectMessage = useCallback((fn: (text: string) => void) => {
+    injectEchoMessageRef.current = fn
+  }, [])
+
+  // ボディ・ダブリング: タイマーイベントをChatDrawerに転送
+  const handleTimerEvent = useCallback((
+    event: 'start' | 'wrapup' | 'complete',
+    taskTitle: string,
+    remainingMin?: number
+  ) => {
+    const messages: Record<string, string> = {
+      start: `「${taskTitle}」、始めましょう。あなたのペースで大丈夫です ✈`,
+      wrapup: `残り2分です。仕上げに入りましょうか？`,
+      complete: `「${taskTitle}」、お疲れさまでした 🛬 ひと息ついてください。`,
+    }
+    const text = remainingMin !== undefined
+      ? `折り返し点です。あと${remainingMin}分ほど。順調ですか？`
+      : messages[event]
+    injectEchoMessageRef.current?.(text)
+    setIsChatOpen(true)
+  }, [])
+
+  // 優先度提案
+  const handleSuggestPriority = useCallback(async () => {
+    setIsChatOpen(true)
+    if (!window.api?.suggestPriority) {
+      injectEchoMessageRef.current?.('優先度提案機能はElectron環境でのみ使用できます。')
+      return
+    }
+    injectEchoMessageRef.current?.('優先度を分析中です... しばらくお待ちください ✈')
+    try {
+      const result = await window.api.suggestPriority(tasks)
+      const proposalText = [
+        result.summary,
+        '',
+        ...result.proposals.map((p: { title: string; suggestedZone: string; reason: string }) =>
+          `**${p.title}** → ${p.suggestedZone}\n  理由: ${p.reason}`
+        ),
+        '',
+        '適用しますか？ タスクをドラッグで移動するか、「全て適用」とお伝えください。'
+      ].join('\n')
+      injectEchoMessageRef.current?.(proposalText)
+    } catch (e: any) {
+      const msg = e?.message ?? '優先度提案に失敗しました'
+      injectEchoMessageRef.current?.(`⚠ ${msg}`)
+      console.error('Priority suggestion failed:', e)
+    }
+  }, [tasks])
 
   const selectedTask = tasks.find(t => t.id === selectedTaskId) || null
 
@@ -158,6 +219,7 @@ function App(): React.JSX.Element {
           onClose={() => setIsChatOpen(false)}
           onAddTask={(payload) => dispatch({ type: 'ADD_TASK', payload })}
           tasks={tasks}
+          onRegisterInjectMessage={handleRegisterInjectMessage}
         />
 
         {/* タイムライン + ダッシュボード */}
@@ -170,6 +232,8 @@ function App(): React.JSX.Element {
             onMoveTask={handleMoveTask}
             onClickTask={setSelectedTaskId}
             defaultTimer={defaultTimer}
+            onTimerEvent={handleTimerEvent}
+            onSuggestPriority={handleSuggestPriority}
           />
         </main>
       </div>

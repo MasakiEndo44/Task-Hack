@@ -22,6 +22,20 @@ export function isZoneFull(zone: ZoneType, currentCount: number): boolean {
   return currentCount >= ZONE_LIMITS[zone]
 }
 
+/** 繰り返しタスクの頻度 */
+export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly'
+
+/** 繰り返しルール */
+export interface RecurrenceRule {
+  frequency: RecurrenceFrequency
+  /** weekly用: 0=日曜, 1=月曜, ..., 6=土曜 */
+  dayOfWeek?: number
+  /** monthly用: 1〜31 */
+  dayOfMonth?: number
+  /** 最後に次インスタンスを生成した日時（重複防止） */
+  lastGeneratedAt?: string
+}
+
 /** タスクデータ */
 export interface Task {
   /** フライトID (FS + 4桁数字) */
@@ -69,6 +83,9 @@ export interface Task {
 
   /** ゾーン内の表示順序 */
   order: number
+
+  /** 繰り返しルール（任意） */
+  recurrence?: RecurrenceRule
 }
 
 /** タスク作成時の入力（idとcreatedAtは自動生成） */

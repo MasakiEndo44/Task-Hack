@@ -35,6 +35,10 @@ const api = {
   initEcho: (userName: string) => ipcRenderer.invoke('echo:init', userName),
   loadSoul: () => ipcRenderer.invoke('soul:load'),
   updateSoulStyle: (content: string) => ipcRenderer.invoke('soul:updateStyle', content),
+  // Phase 5: Recurrence
+  checkRecurringTasks: (tasks: any[]) => ipcRenderer.invoke('recurrence:check', tasks),
+  // Phase 5: Priority
+  suggestPriority: (tasks: any[]) => ipcRenderer.invoke('priority:suggest', tasks),
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

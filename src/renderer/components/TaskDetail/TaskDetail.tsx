@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { Task } from '../../types/task'
+import type { Task, RecurrenceFrequency } from '../../types/task'
 import styles from './TaskDetail.module.css'
 
 interface TaskDetailProps {
@@ -13,7 +13,10 @@ export function TaskDetail({ task, onUpdate }: TaskDetailProps) {
   const [scheduledStartDate, setScheduledStartDate] = useState(task.scheduledStart ? task.scheduledStart.split('T')[0] : '')
   const [subtasks, setSubtasks] = useState(task.subtasks || [])
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('')
-  
+  const [recurrenceFreq, setRecurrenceFreq] = useState<RecurrenceFrequency | ''>(task.recurrence?.frequency ?? '')
+  const [recurrenceDayOfWeek, setRecurrenceDayOfWeek] = useState(task.recurrence?.dayOfWeek ?? 1)
+  const [recurrenceDayOfMonth, setRecurrenceDayOfMonth] = useState(task.recurrence?.dayOfMonth ?? 1)
+
   // taskが切り替わったら初期値をリセット
   useEffect(() => {
     setEstimatedTime(task.estimatedTime || 25)
@@ -21,7 +24,10 @@ export function TaskDetail({ task, onUpdate }: TaskDetailProps) {
     setScheduledStartDate(task.scheduledStart ? task.scheduledStart.split('T')[0] : '')
     setSubtasks(task.subtasks || [])
     setNewSubtaskTitle('')
-  }, [task.id, task.estimatedTime, task.notes, task.scheduledStart, task.subtasks])
+    setRecurrenceFreq(task.recurrence?.frequency ?? '')
+    setRecurrenceDayOfWeek(task.recurrence?.dayOfWeek ?? 1)
+    setRecurrenceDayOfMonth(task.recurrence?.dayOfMonth ?? 1)
+  }, [task.id, task.estimatedTime, task.notes, task.scheduledStart, task.subtasks, task.recurrence])
 
   const handleToggleSubtask = (id: string) => {
     const newSubtasks = subtasks.map(st => st.id === id ? { ...st, completed: !st.completed } : st)
@@ -53,10 +59,15 @@ export function TaskDetail({ task, onUpdate }: TaskDetailProps) {
     const timer = setTimeout(() => {
       const currentStart = task.scheduledStart ? task.scheduledStart.split('T')[0] : ''
       const subtasksChanged = JSON.stringify(subtasks) !== JSON.stringify(task.subtasks || [])
-      const hasChanged = estimatedTime !== (task.estimatedTime || 25) || 
-                         notes !== (task.notes || '') || 
+      const currentRecurrenceFreq = task.recurrence?.frequency ?? ''
+      const recurrenceChanged = recurrenceFreq !== currentRecurrenceFreq ||
+        (recurrenceFreq === 'weekly' && recurrenceDayOfWeek !== (task.recurrence?.dayOfWeek ?? 1)) ||
+        (recurrenceFreq === 'monthly' && recurrenceDayOfMonth !== (task.recurrence?.dayOfMonth ?? 1))
+      const hasChanged = estimatedTime !== (task.estimatedTime || 25) ||
+                         notes !== (task.notes || '') ||
                          scheduledStartDate !== currentStart ||
-                         subtasksChanged
+                         subtasksChanged ||
+                         recurrenceChanged
 
       if (hasChanged) {
         let newScheduledStart = task.scheduledStart
@@ -68,17 +79,27 @@ export function TaskDetail({ task, onUpdate }: TaskDetailProps) {
             newScheduledStart = `${scheduledStartDate}T${timePart}`
           }
         }
-        
+
+        const newRecurrence = recurrenceFreq
+          ? {
+              frequency: recurrenceFreq,
+              ...(recurrenceFreq === 'weekly' ? { dayOfWeek: recurrenceDayOfWeek } : {}),
+              ...(recurrenceFreq === 'monthly' ? { dayOfMonth: recurrenceDayOfMonth } : {}),
+              lastGeneratedAt: task.recurrence?.lastGeneratedAt,
+            }
+          : undefined
+
         onUpdate(task.id, {
           estimatedTime,
           notes,
           scheduledStart: newScheduledStart,
-          subtasks
+          subtasks,
+          recurrence: newRecurrence,
         })
       }
     }, 500)
     return () => clearTimeout(timer)
-  }, [estimatedTime, notes, scheduledStartDate, subtasks, task.id, task.estimatedTime, task.notes, task.scheduledStart, task.subtasks, onUpdate])
+  }, [estimatedTime, notes, scheduledStartDate, subtasks, recurrenceFreq, recurrenceDayOfWeek, recurrenceDayOfMonth, task.id, task.estimatedTime, task.notes, task.scheduledStart, task.subtasks, task.recurrence, onUpdate])
 
   return (
     <div className={styles.container}>
@@ -153,8 +174,8 @@ export function TaskDetail({ task, onUpdate }: TaskDetailProps) {
         </div>
         {subtasks.length < 3 && (
           <div className={styles.addSubtaskContainer}>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={newSubtaskTitle}
               onChange={(e) => setNewSubtaskTitle(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddSubtask()}
@@ -165,6 +186,42 @@ export function TaskDetail({ task, onUpdate }: TaskDetailProps) {
               追加
             </button>
           </div>
+        )}
+      </div>
+
+      <div className={styles.section}>
+        <label className={styles.label}>🔁 繰り返し</label>
+        <select
+          value={recurrenceFreq}
+          onChange={e => setRecurrenceFreq(e.target.value as RecurrenceFrequency | '')}
+          className={styles.select}
+        >
+          <option value="">なし</option>
+          <option value="daily">毎日</option>
+          <option value="weekly">毎週</option>
+          <option value="monthly">毎月</option>
+        </select>
+        {recurrenceFreq === 'weekly' && (
+          <select
+            value={recurrenceDayOfWeek}
+            onChange={e => setRecurrenceDayOfWeek(Number(e.target.value))}
+            className={styles.select}
+          >
+            {['日', '月', '火', '水', '木', '金', '土'].map((d, i) => (
+              <option key={i} value={i}>{d}曜日</option>
+            ))}
+          </select>
+        )}
+        {recurrenceFreq === 'monthly' && (
+          <select
+            value={recurrenceDayOfMonth}
+            onChange={e => setRecurrenceDayOfMonth(Number(e.target.value))}
+            className={styles.select}
+          >
+            {Array.from({ length: 31 }, (_, i) => (
+              <option key={i + 1} value={i + 1}>{i + 1}日</option>
+            ))}
+          </select>
         )}
       </div>
     </div>

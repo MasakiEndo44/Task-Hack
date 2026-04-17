@@ -22,9 +22,11 @@ interface DashboardProps {
   onMoveTask: (taskId: string, toZone: ZoneType, toIndex: number) => void
   onClickTask?: (taskId: string) => void
   defaultTimer: number
+  onTimerEvent?: (event: 'start' | 'wrapup' | 'complete', taskTitle: string, remainingMin?: number) => void
+  onSuggestPriority?: () => void
 }
 
-export function Dashboard({ tasksByZone, onComplete, onUndoComplete, onMoveTask, onClickTask, defaultTimer }: DashboardProps) {
+export function Dashboard({ tasksByZone, onComplete, onUndoComplete, onMoveTask, onClickTask, defaultTimer, onTimerEvent, onSuggestPriority }: DashboardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
 
   const sensors = useSensors(
@@ -85,6 +87,7 @@ export function Dashboard({ tasksByZone, onComplete, onUndoComplete, onMoveTask,
               onComplete={onComplete}
               onClickTask={onClickTask}
               defaultTimer={defaultTimer}
+              onTimerEvent={onTimerEvent}
             />
           </div>
           <div className={styles.nextZone}>
@@ -112,6 +115,7 @@ export function Dashboard({ tasksByZone, onComplete, onUndoComplete, onMoveTask,
             maxTasks={ZONE_LIMITS.HOLDING}
             onComplete={onComplete}
             onClickTask={onClickTask}
+            onSuggestPriority={onSuggestPriority}
           />
         </div>
 
