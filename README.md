@@ -64,6 +64,25 @@ npm test
 npm run test:watch
 ```
 
+## 📦 Windowsインストーラ（.exe）作成
+
+```bash
+# 品質確認
+npm test
+npm run build
+
+# .exe インストーラ作成
+npm run build:win
+```
+
+- 出力先: `release/<version>/Task-Hack-Setup-<version>.exe`
+- バージョンは `package.json` の `version` を使用
+
+## 📝 1週間FB検証テンプレート
+
+- 運用ガイド: `docs/output/release-and-feedback-guide.md`
+- FBチェックリストひな型: `docs/output/fb-checklist-template.md`
+
 ## 🗺 開発ロードマップ
 
 * **[Phase 1] MVP Core**: ATC型ダッシュボード、フライトストリップUI、D&D操作（✅ 実装済）
