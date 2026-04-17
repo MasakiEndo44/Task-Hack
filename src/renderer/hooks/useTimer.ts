@@ -27,6 +27,13 @@ export function useTimer(
   const [totalSeconds, setTotalSeconds] = useState(initialMinutes * 60)
   const [remainingTime, setRemainingTime] = useState(initialMinutes * 60)
   const [state, setState] = useState<TimerState>('idle')
+
+  // stale closure防止: 常に最新のcallbacksとtaskTitleをRefで保持
+  const callbacksRef = useRef(callbacks)
+  const taskTitleRef = useRef(activeTaskTitle)
+  callbacksRef.current = callbacks
+  taskTitleRef.current = activeTaskTitle
+
   const midpointTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const prevStateRef = useRef<TimerState>('idle')
 
@@ -38,21 +45,27 @@ export function useTimer(
     }
   }, [initialMinutes, state])
 
-  // コールバック発火: running開始時
+  // コールバック発火: state遷移時
   useEffect(() => {
     const prev = prevStateRef.current
     prevStateRef.current = state
 
     if (state === 'running' && prev !== 'running') {
-      callbacks?.onStart?.(activeTaskTitle)
+      callbacksRef.current?.onStart?.(taskTitleRef.current)
 
       // 50%チェックイン（onMidpointが明示的に提供された場合のみ）
-      if (callbacks?.onMidpoint) {
+      if (callbacksRef.current?.onMidpoint) {
         if (midpointTimerRef.current) clearTimeout(midpointTimerRef.current)
-        const halfMs = (remainingTime / 2) * 1000
-        midpointTimerRef.current = setTimeout(() => {
-          callbacks.onMidpoint?.(activeTaskTitle, Math.floor(remainingTime / 2 / 60))
-        }, halfMs)
+        // remainingTimeはこの時点の値をクロージャで捕捉する必要がある
+        // setRemainingTimeで最新値を取得
+        setRemainingTime(current => {
+          const halfMs = (current / 2) * 1000
+          midpointTimerRef.current = setTimeout(() => {
+            const rem = Math.floor(current / 2 / 60)
+            callbacksRef.current?.onMidpoint?.(taskTitleRef.current, rem)
+          }, halfMs)
+          return current
+        })
       }
     }
 
@@ -61,13 +74,13 @@ export function useTimer(
         clearTimeout(midpointTimerRef.current)
         midpointTimerRef.current = null
       }
-      callbacks?.onWrapup?.(activeTaskTitle)
+      callbacksRef.current?.onWrapup?.(taskTitleRef.current)
     }
 
     if (state === 'idle' && (prev === 'running' || prev === 'wrapup')) {
-      callbacks?.onComplete?.(activeTaskTitle)
+      callbacksRef.current?.onComplete?.(taskTitleRef.current)
     }
-  }, [state]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state])
 
   // クリーンアップ
   useEffect(() => {

@@ -136,6 +136,10 @@ function App(): React.JSX.Element {
     dispatch({ type: 'UPDATE_TASK', payload: { taskId, updates } })
   }, [dispatch])
 
+  const handleRegisterInjectMessage = useCallback((fn: (text: string) => void) => {
+    injectEchoMessageRef.current = fn
+  }, [])
+
   // ボディ・ダブリング: タイマーイベントをChatDrawerに転送
   const handleTimerEvent = useCallback((
     event: 'start' | 'wrapup' | 'complete',
@@ -156,7 +160,12 @@ function App(): React.JSX.Element {
 
   // 優先度提案
   const handleSuggestPriority = useCallback(async () => {
-    if (!window.api?.suggestPriority) return
+    setIsChatOpen(true)
+    if (!window.api?.suggestPriority) {
+      injectEchoMessageRef.current?.('優先度提案機能はElectron環境でのみ使用できます。')
+      return
+    }
+    injectEchoMessageRef.current?.('優先度を分析中です... しばらくお待ちください ✈')
     try {
       const result = await window.api.suggestPriority(tasks)
       const proposalText = [
@@ -169,8 +178,9 @@ function App(): React.JSX.Element {
         '適用しますか？ タスクをドラッグで移動するか、「全て適用」とお伝えください。'
       ].join('\n')
       injectEchoMessageRef.current?.(proposalText)
-      setIsChatOpen(true)
     } catch (e: any) {
+      const msg = e?.message ?? '優先度提案に失敗しました'
+      injectEchoMessageRef.current?.(`⚠ ${msg}`)
       console.error('Priority suggestion failed:', e)
     }
   }, [tasks])
@@ -209,7 +219,7 @@ function App(): React.JSX.Element {
           onClose={() => setIsChatOpen(false)}
           onAddTask={(payload) => dispatch({ type: 'ADD_TASK', payload })}
           tasks={tasks}
-          onRegisterInjectMessage={(fn) => { injectEchoMessageRef.current = fn }}
+          onRegisterInjectMessage={handleRegisterInjectMessage}
         />
 
         {/* タイムライン + ダッシュボード */}
