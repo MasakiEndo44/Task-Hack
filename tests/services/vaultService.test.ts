@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { resolveVaultPath, getWeekLabel } from '../../src/main/services/vaultService'
 import { homedir } from 'os'
-import { join } from 'path'
+import { join, resolve, isAbsolute } from 'path'
 
 describe('resolveVaultPath', () => {
   it('~/foo を絶対パスに展開する', () => {
@@ -9,7 +9,10 @@ describe('resolveVaultPath', () => {
   })
 
   it('絶対パスはそのまま返す', () => {
-    expect(resolveVaultPath('/absolute/path')).toBe('/absolute/path')
+    const input = '/absolute/path'
+    const result = resolveVaultPath(input)
+    expect(isAbsolute(result)).toBe(true)
+    expect(result).toBe(resolve(input))
   })
 })
 

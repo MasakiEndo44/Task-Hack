@@ -4,6 +4,12 @@ vi.mock('../../src/main/services/sweepService', () => ({
   runSweep: vi.fn().mockResolvedValue(undefined)
 }))
 
+vi.mock('electron', () => ({
+  app: {
+    getPath: vi.fn(() => '/tmp/task-hack-test-home')
+  }
+}))
+
 import { startScheduler, stopScheduler, checkAndRunCatchup } from '../../src/main/services/scheduler'
 
 describe('startScheduler / stopScheduler', () => {
