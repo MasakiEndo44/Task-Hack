@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -6,6 +7,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { Task, ZoneType } from '../../types/task'
+import type { TimerCallbacks } from '../../hooks/useTimer'
 import { FlightStrip } from '../FlightStrip/FlightStrip'
 import { Timer } from '../Timer/Timer'
 import styles from './Zone.module.css'
@@ -21,6 +23,8 @@ interface ZoneProps {
   onUndo?: (taskId: string) => void
   onClickTask?: (taskId: string) => void
   defaultTimer?: number
+  onTimerEvent?: (event: 'start' | 'wrapup' | 'complete', taskTitle: string, remainingMin?: number) => void
+  onSuggestPriority?: () => void
 }
 
 function SortableFlightStrip({
@@ -61,8 +65,16 @@ function SortableFlightStrip({
   )
 }
 
-export function Zone({ zone, title, subtitle, icon, tasks, maxTasks, onComplete, onUndo, onClickTask, defaultTimer = 25 }: ZoneProps) {
+export function Zone({ zone, title, subtitle, icon, tasks, maxTasks, onComplete, onUndo, onClickTask, defaultTimer = 25, onTimerEvent, onSuggestPriority }: ZoneProps) {
   const { setNodeRef, isOver } = useDroppable({ id: zone })
+
+  const timerCallbacks: TimerCallbacks | undefined = onTimerEvent ? {
+    onStart: (taskTitle) => onTimerEvent('start', taskTitle),
+    onWrapup: (taskTitle) => onTimerEvent('wrapup', taskTitle),
+    onComplete: (taskTitle) => onTimerEvent('complete', taskTitle),
+  } : undefined
+
+  const activeTaskTitle = tasks[0]?.title ?? ''
   const isFull = maxTasks !== Infinity && tasks.length >= maxTasks
   const countDisplay = maxTasks === Infinity
     ? `${tasks.length}`
@@ -82,13 +94,26 @@ export function Zone({ zone, title, subtitle, icon, tasks, maxTasks, onComplete,
           {maxTasks !== Infinity && (
             <span className={styles.maxLabel}>max {maxTasks}</span>
           )}
+          {zone === 'HOLDING' && onSuggestPriority && (
+            <button
+              className={styles.prioritySuggestBtn}
+              onClick={onSuggestPriority}
+              title="Echoに優先順位を提案してもらう"
+            >
+              ◈ Echo
+            </button>
+          )}
         </div>
         <span className={styles.count}>{countDisplay}</span>
       </div>
       
       {/* ACTIVEゾーンかつタスクが存在する場合にタイマーを表示 */}
       {zone === 'ACTIVE' && tasks.length > 0 && (
-        <Timer initialMinutes={tasks[0].estimatedTime || defaultTimer} />
+        <Timer
+          initialMinutes={tasks[0].estimatedTime || defaultTimer}
+          taskTitle={activeTaskTitle}
+          callbacks={timerCallbacks}
+        />
       )}
 
       <SortableContext

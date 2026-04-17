@@ -8,15 +8,42 @@ const DEFAULT_WIDTH = 320
 const MIN_WIDTH = 240
 const MAX_WIDTH = 520
 
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024
+const MAX_IMAGE_PIXELS = 1280
+const IMAGE_CONSENT_KEY = 'task-hack:image-api-consent'
+
+async function processImageFile(blob: Blob): Promise<string | null> {
+  if (blob.size > MAX_IMAGE_BYTES) {
+    alert('画像サイズは2MB以下にしてください')
+    return null
+  }
+  return new Promise((resolve) => {
+    const img = new Image()
+    const url = URL.createObjectURL(blob)
+    img.onload = () => {
+      const scale = Math.min(1, MAX_IMAGE_PIXELS / Math.max(img.width, img.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(img.width * scale)
+      canvas.height = Math.round(img.height * scale)
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+      URL.revokeObjectURL(url)
+      resolve(canvas.toDataURL('image/jpeg', 0.85))
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(null) }
+    img.src = url
+  })
+}
+
 export interface ChatDrawerProps {
   isOpen: boolean
   onClose: () => void
   onAddTask: (task: TaskInput) => void
   tasks: Task[]
+  onRegisterInjectMessage?: (fn: (text: string) => void) => void
 }
 
-export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onAddTask, tasks }) => {
-  const { messages, sendMessage, isLoading } = useChat(tasks)
+export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onAddTask, tasks, onRegisterInjectMessage }) => {
+  const { messages, sendMessage, isLoading, injectMessage } = useChat(tasks)
   const [input, setInput] = useState('')
   const [isComposing, setIsComposing] = useState(false)
   const [attachedImage, setAttachedImage] = useState<string | null>(null)
@@ -30,6 +57,30 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onAddTa
       historyRef.current.scrollTop = historyRef.current.scrollHeight
     }
   }, [messages, isLoading])
+
+  // ボディ・ダブリング用: 親からEchoメッセージを注入できるようにする
+  useEffect(() => {
+    onRegisterInjectMessage?.(injectMessage)
+  }, [onRegisterInjectMessage, injectMessage])
+
+  // Ctrl+V / Cmd+V でのクリップボード画像ペースト
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      if (!isOpen) return
+      const items = Array.from(e.clipboardData?.items ?? [])
+      const imageItem = items.find(item => item.type.startsWith('image/'))
+      if (!imageItem) return
+
+      const blob = imageItem.getAsFile()
+      if (!blob) return
+
+      const dataUrl = await processImageFile(blob)
+      if (dataUrl) setAttachedImage(dataUrl)
+    }
+
+    window.addEventListener('paste', handlePaste)
+    return () => window.removeEventListener('paste', handlePaste)
+  }, [isOpen])
 
   // resize logic
   const handleResizeMouseDown = useCallback((e: React.MouseEvent) => {
@@ -58,6 +109,16 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onAddTa
 
   const handleSend = useCallback(() => {
     if ((!input.trim() && !attachedImage) || isLoading) return
+
+    if (attachedImage && !localStorage.getItem(IMAGE_CONSENT_KEY)) {
+      const ok = confirm(
+        'この画像はOpenAI APIに送信され、タスク生成に使用されます。\n' +
+        'タスクデータはローカルにのみ保存されます。よろしいですか？'
+      )
+      if (!ok) return
+      localStorage.setItem(IMAGE_CONSENT_KEY, '1')
+    }
+
     sendMessage(input.trim(), attachedImage ?? undefined)
     setInput('')
     setAttachedImage(null)

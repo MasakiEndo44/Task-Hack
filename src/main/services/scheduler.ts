@@ -1,6 +1,11 @@
 import cron from 'node-cron'
+import fs from 'fs/promises'
+import { join } from 'path'
+import { app } from 'electron'
 import type { AppSettings } from '../types/settings'
 import { runSweep } from './sweepService'
+import { processRecurringTasks } from './recurrenceService'
+import type { Task } from '../../renderer/types/task'
 
 let scheduledTask: cron.ScheduledTask | null = null
 
@@ -35,6 +40,29 @@ export function stopScheduler(): void {
     scheduledTask = null
     console.log('[Scheduler] スケジューラー停止')
   }
+}
+
+export async function checkAndRunRecurringTasks(): Promise<void> {
+  const dataDir = join(app.getPath('home'), '.task-hack')
+  const tasksFile = join(dataDir, 'tasks.json')
+
+  let tasks: Task[] = []
+  try {
+    const data = await fs.readFile(tasksFile, 'utf-8')
+    tasks = JSON.parse(data)
+  } catch {
+    return
+  }
+
+  const { generated, updatedTemplates } = processRecurringTasks(tasks)
+  if (generated.length === 0) return
+
+  const updatedTasks = tasks
+    .map(t => updatedTemplates.find(u => u.id === t.id) ?? t)
+    .concat(generated)
+
+  await fs.writeFile(tasksFile, JSON.stringify(updatedTasks, null, 2), 'utf-8')
+  console.log(`[Recurrence] ${generated.length}件の定期タスクを生成しました`)
 }
 
 export async function checkAndRunCatchup(

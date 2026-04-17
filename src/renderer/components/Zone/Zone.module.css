@@ -100,6 +100,22 @@
   overflow-y: auto;
 }
 
+.prioritySuggestBtn {
+  background: rgba(89, 161, 238, 0.1);
+  border: 1px solid rgba(89, 161, 238, 0.3);
+  border-radius: var(--radius-sm);
+  color: var(--zone-next);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  padding: 1px 6px;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.prioritySuggestBtn:hover {
+  background: rgba(89, 161, 238, 0.2);
+}
+
 .empty {
   display: flex;
   align-items: center;

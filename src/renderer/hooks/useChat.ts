@@ -181,5 +181,9 @@ export function useChat(tasks: Task[]) {
     }
   }, [tasks])
 
-  return { messages, sendMessage, isLoading }
+  const injectMessage = useCallback((text: string) => {
+    setMessages(prev => [...prev, { role: 'assistant', content: text }])
+  }, [])
+
+  return { messages, sendMessage, isLoading, injectMessage }
 }

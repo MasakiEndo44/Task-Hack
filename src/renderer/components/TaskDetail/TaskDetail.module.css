@@ -108,6 +108,25 @@
   color-scheme: dark;
 }
 
+.select {
+  width: 100%;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  transition: border-color var(--transition-fast);
+  color-scheme: dark;
+  margin-top: var(--space-xs);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--border-hover);
+}
+
 /* Subtasks */
 .subtasksList {
   display: flex;
