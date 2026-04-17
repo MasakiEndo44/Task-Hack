@@ -21,6 +21,8 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
   const [pathValidation, setPathValidation] = useState<{ valid: boolean; error?: string } | null>(null)
   const [isSweepRunning, setIsSweepRunning] = useState(false)
   const [sweepMessage, setSweepMessage] = useState('')
+  const [connectionTest, setConnectionTest] = useState<{ ok: boolean; error?: string } | null>(null)
+  const [isTestingConnection, setIsTestingConnection] = useState(false)
 
   useEffect(() => {
     setDefaultTimer(propDefaultTimer)
@@ -50,6 +52,14 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
   }, [isOpen, onClose])
 
   if (!isOpen) return null
+
+  const handleTestConnection = async () => {
+    setIsTestingConnection(true)
+    setConnectionTest(null)
+    const result = await window.api.testChatConnection(apiKey)
+    setConnectionTest(result)
+    setIsTestingConnection(false)
+  }
 
   const handleSave = () => {
     window.api.saveSettings({
@@ -128,13 +138,27 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
           <div className={styles.tabContent}>
             <div className={styles.section}>
               <label>OpenAI API Key</label>
-              <input
-                type="password"
-                value={apiKey}
-                onChange={e => setApiKey(e.target.value)}
-                className={styles.input}
-                placeholder="sk-..."
-              />
+              <div className={styles.inputRow}>
+                <input
+                  type="password"
+                  value={apiKey}
+                  onChange={e => { setApiKey(e.target.value); setConnectionTest(null) }}
+                  className={styles.input}
+                  placeholder="sk-..."
+                />
+                <button
+                  className={styles.iconButton}
+                  onClick={handleTestConnection}
+                  disabled={!apiKey.trim() || isTestingConnection}
+                >
+                  {isTestingConnection ? '確認中...' : '接続テスト'}
+                </button>
+              </div>
+              {connectionTest && (
+                <div className={`${styles.pathValidation} ${connectionTest.ok ? styles.valid : styles.invalid}`}>
+                  {connectionTest.ok ? '✓ 接続OK' : `⚠ ${connectionTest.error}`}
+                </div>
+              )}
               <span className={styles.help}>AIチャット・週次スイープに使用するAPIキーです。</span>
             </div>
 

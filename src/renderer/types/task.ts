@@ -86,6 +86,9 @@ export interface Task {
 
   /** 繰り返しルール（任意） */
   recurrence?: RecurrenceRule
+
+  /** 前提タスクID（このタスクの前に完了が必要なタスク） */
+  dependsOn?: string
 }
 
 /** タスク作成時の入力（idとcreatedAtは自動生成） */

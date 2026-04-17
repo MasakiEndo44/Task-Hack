@@ -29,6 +29,8 @@ export interface IElectronAPI {
   checkRecurringTasks: (tasks: Task[]) => Promise<{ generated: Task[]; updatedTemplates: Task[] }>
   // Phase 5: Priority
   suggestPriority: (tasks: Task[]) => Promise<{ proposals: Array<{ taskId: string; title: string; suggestedZone: string; reason: string }>; summary: string }>
+  // Connection test
+  testChatConnection: (apiKey: string) => Promise<{ ok: boolean; error?: string }>
 }
 
 declare global {

@@ -17,6 +17,7 @@ import styles from './Dashboard.module.css'
 
 interface DashboardProps {
   tasksByZone: Record<ZoneType, Task[]>
+  allTasks: Task[]
   onComplete: (taskId: string) => void
   onUndoComplete: (taskId: string) => void
   onMoveTask: (taskId: string, toZone: ZoneType, toIndex: number) => void
@@ -26,8 +27,18 @@ interface DashboardProps {
   onSuggestPriority?: () => void
 }
 
-export function Dashboard({ tasksByZone, onComplete, onUndoComplete, onMoveTask, onClickTask, defaultTimer, onTimerEvent, onSuggestPriority }: DashboardProps) {
+export function Dashboard({ tasksByZone, allTasks = [], onComplete, onUndoComplete, onMoveTask, onClickTask, defaultTimer, onTimerEvent, onSuggestPriority }: DashboardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
+
+  const blockedTaskIds = new Set(
+    allTasks
+      .filter(t => {
+        if (!t.dependsOn) return false
+        const dep = allTasks.find(d => d.id === t.dependsOn)
+        return dep && dep.zone !== 'CLEARED'
+      })
+      .map(t => t.id)
+  )
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -88,6 +99,7 @@ export function Dashboard({ tasksByZone, onComplete, onUndoComplete, onMoveTask,
               onClickTask={onClickTask}
               defaultTimer={defaultTimer}
               onTimerEvent={onTimerEvent}
+              blockedTaskIds={blockedTaskIds}
             />
           </div>
           <div className={styles.nextZone}>
@@ -100,6 +112,7 @@ export function Dashboard({ tasksByZone, onComplete, onUndoComplete, onMoveTask,
               maxTasks={ZONE_LIMITS.NEXT_ACTION}
               onComplete={onComplete}
               onClickTask={onClickTask}
+              blockedTaskIds={blockedTaskIds}
             />
           </div>
         </div>
@@ -116,6 +129,7 @@ export function Dashboard({ tasksByZone, onComplete, onUndoComplete, onMoveTask,
             onComplete={onComplete}
             onClickTask={onClickTask}
             onSuggestPriority={onSuggestPriority}
+            blockedTaskIds={blockedTaskIds}
           />
         </div>
 
@@ -131,6 +145,7 @@ export function Dashboard({ tasksByZone, onComplete, onUndoComplete, onMoveTask,
             onComplete={onComplete}
             onUndo={onUndoComplete}
             onClickTask={onClickTask}
+            blockedTaskIds={blockedTaskIds}
           />
         </div>
       </div>

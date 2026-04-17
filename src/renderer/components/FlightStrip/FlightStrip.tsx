@@ -7,6 +7,7 @@ interface FlightStripProps {
   onUndo?: (taskId: string) => void
   onClick?: (taskId: string) => void
   isDragging?: boolean
+  isBlocked?: boolean
 }
 
 function formatScheduledTime(iso?: string): string | null {
@@ -19,7 +20,7 @@ function formatScheduledTime(iso?: string): string | null {
   })
 }
 
-export function FlightStrip({ task, onComplete, onUndo, onClick, isDragging = false }: FlightStripProps) {
+export function FlightStrip({ task, onComplete, onUndo, onClick, isDragging = false, isBlocked = false }: FlightStripProps) {
   const scheduledTime = formatScheduledTime(task.scheduledStart)
   const isUrgent = task.priority === 'URG'
   const isCleared = task.zone === 'CLEARED'
@@ -30,11 +31,14 @@ export function FlightStrip({ task, onComplete, onUndo, onClick, isDragging = fa
       data-testid={`flight-strip-${task.id}`}
       onClick={() => onClick?.(task.id)}
     >
-      {/* 上段: フライトID + 時刻 + 優先度バッジ */}
+      {/* 上段: フライトID + 時刻 + 優先度バッジ + 依存ブロックインジケーター */}
       <div className={styles.topRow}>
         <span className={styles.flightId}>{task.id}</span>
         {scheduledTime && (
           <span className={styles.time}>{scheduledTime}</span>
+        )}
+        {isBlocked && (
+          <span className={styles.blockedIndicator} title="前提タスクが未完了です">🔗</span>
         )}
         <span className={`${styles.priorityBadge} ${isUrgent ? styles.urgent : styles.normal}`}>
           {task.priority}

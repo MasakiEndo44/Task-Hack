@@ -53,6 +53,14 @@ function taskReducer(state: Task[], action: TaskAction): Task[] {
         return state // 移動を拒否
       }
 
+      // 依存関係チェック: ACTIVE移動時、前提タスクが未完了なら拒否
+      if (toZone === 'ACTIVE' && task.dependsOn) {
+        const dep = state.find(t => t.id === task.dependsOn)
+        if (dep && dep.zone !== 'CLEARED') {
+          return state
+        }
+      }
+
       return state.map(t =>
         t.id === taskId
           ? { ...t, zone: toZone, order: toIndex }
@@ -199,5 +207,13 @@ export function useTaskReducer(initialTasks: Task[] = []) {
     return counts
   }, [tasks])
 
-  return { tasks, dispatch, getTasksByZone, getZoneCounts }
+  const getBlockingDependency = useCallback((taskId: string): Task | null => {
+    const task = tasks.find(t => t.id === taskId)
+    if (!task?.dependsOn) return null
+    const dep = tasks.find(t => t.id === task.dependsOn)
+    if (!dep || dep.zone === 'CLEARED') return null
+    return dep
+  }, [tasks])
+
+  return { tasks, dispatch, getTasksByZone, getZoneCounts, getBlockingDependency }
 }
