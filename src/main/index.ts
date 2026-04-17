@@ -1,8 +1,14 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import fs from 'fs/promises'
 import { is } from '@electron-toolkit/utils'
 import OpenAI from 'openai'
+import { DEFAULT_SETTINGS } from './types/settings'
+import { runSweep } from './services/sweepService'
+import { validateVaultPath } from './services/vaultService'
+import { loadAllProfile } from './services/profileService'
+import { loadSoul, initEcho, updateSoulStyle } from './services/soulService'
+import { startScheduler, stopScheduler, checkAndRunCatchup } from './services/scheduler'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -38,7 +44,17 @@ function createWindow(): void {
   }
 }
 
-app.whenReady().then(() => {
+async function loadCurrentSettings() {
+  const settingsFile = join(app.getPath('home'), '.task-hack', 'settings.json')
+  try {
+    const data = await fs.readFile(settingsFile, 'utf-8')
+    return { ...DEFAULT_SETTINGS, ...JSON.parse(data) }
+  } catch {
+    return { ...DEFAULT_SETTINGS }
+  }
+}
+
+app.whenReady().then(async () => {
   createWindow()
 
   const dataDir = join(app.getPath('home'), '.task-hack')
@@ -110,6 +126,46 @@ app.whenReady().then(() => {
     }
   })
 
+  // Phase 4: Sweep
+  ipcMain.handle('sweep:run', async () => {
+    const settings = await loadCurrentSettings()
+    await runSweep(settings)
+  })
+
+  // Phase 4: Vault
+  ipcMain.handle('vault:validate', async (_, vaultPath: string) => {
+    return validateVaultPath(vaultPath)
+  })
+
+  ipcMain.handle('vault:selectFolder', async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openDirectory'],
+      title: 'Obsidian Vaultフォルダを選択してください'
+    })
+    return result.canceled ? null : result.filePaths[0]
+  })
+
+  // Phase 4: Profile
+  ipcMain.handle('profile:load', async () => {
+    return loadAllProfile()
+  })
+
+  // Phase 4: Echo / Soul
+  ipcMain.handle('echo:init', async (_, userName: string) => {
+    return initEcho(userName)
+  })
+  ipcMain.handle('soul:load', async () => {
+    return loadSoul()
+  })
+  ipcMain.handle('soul:updateStyle', async (_, content: string) => {
+    return updateSoulStyle(content)
+  })
+
+  // Phase 4: スケジューラー起動
+  const settings = await loadCurrentSettings()
+  startScheduler(settings, loadCurrentSettings)
+  await checkAndRunCatchup(settings, loadCurrentSettings)
+
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
@@ -119,4 +175,8 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+
+app.on('before-quit', () => {
+  stopScheduler()
 })
