@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { useChat } from '../../hooks/useChat'
+import { useChat, parseAssistantMarkers } from '../../hooks/useChat'
 import { TaskProposal } from './TaskProposal'
 import type { Task, TaskInput } from '../../types/task'
 import styles from './ChatDrawer.module.css'
@@ -40,10 +40,12 @@ export interface ChatDrawerProps {
   onAddTask: (task: TaskInput) => void
   tasks: Task[]
   onRegisterInjectMessage?: (fn: (text: string) => void) => void
+  onUpdateTask?: (taskId: string, updates: Partial<Task>) => void
+  onRegisterStartClarification?: (fn: (task: Task) => void) => void
 }
 
-export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onAddTask, tasks, onRegisterInjectMessage }) => {
-  const { messages, sendMessage, isLoading, injectMessage } = useChat(tasks)
+export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onAddTask, tasks, onRegisterInjectMessage, onUpdateTask, onRegisterStartClarification }) => {
+  const { messages, sendMessage, isLoading, injectMessage, startClarification } = useChat(tasks, onUpdateTask)
   const [input, setInput] = useState('')
   const [isComposing, setIsComposing] = useState(false)
   const [attachedImage, setAttachedImage] = useState<string | null>(null)
@@ -62,6 +64,11 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onAddTa
   useEffect(() => {
     onRegisterInjectMessage?.(injectMessage)
   }, [onRegisterInjectMessage, injectMessage])
+
+  // 5W2H clarification: 親からstartClarificationを呼べるようにする
+  useEffect(() => {
+    onRegisterStartClarification?.(startClarification)
+  }, [onRegisterStartClarification, startClarification])
 
   // Ctrl+V / Cmd+V でのクリップボード画像ペースト
   useEffect(() => {
@@ -119,7 +126,8 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onAddTa
       localStorage.setItem(IMAGE_CONSENT_KEY, '1')
     }
 
-    sendMessage(input.trim(), attachedImage ?? undefined)
+    const text = input.trim() || (attachedImage ? 'この画像の内容を読み取り、タスクとして提案してください。' : '')
+    sendMessage(text, attachedImage ?? undefined)
     setInput('')
     setAttachedImage(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
@@ -154,7 +162,7 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onAddTa
         <div className={styles.header}>
           <div className={styles.title}>
             <div className={styles.statusIndicator} />
-            AI Co-planner
+            Echo AI
           </div>
           <button className={styles.closeButton} onClick={onClose} aria-label="チャットを閉じる">
             ✕
@@ -168,17 +176,36 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onAddTa
               タスクについて気軽に相談してください...
             </div>
           )}
-          {messages.map((m, i) => {
+          {messages.filter(m => !m.isSystemTrigger).map((m, i) => {
+            const isLastAssistant = m.role === 'assistant' && i === messages.filter(x => !x.isSystemTrigger).length - 1 && !isLoading
             if (m.role === 'assistant') {
-              const parts = m.content.split(/```(?:json)?\n([\s\S]*?)\n```/g)
+              const { displayText, quickReplies } = parseAssistantMarkers(m.content)
+              const textToShow = isLastAssistant ? displayText : m.content.replace(/<!--QR:[\s\S]*?-->/g, '').replace(/<!--TU:[\s\S]*?-->/g, '').replace(/<!--DONE:[\s\S]*?-->/g, '').trim()
+              const parts = textToShow.split(/```(?:json)?\n([\s\S]*?)\n```/g)
               return (
-                <div key={i} className={`${styles.message} ${styles.messageAssistant}`}>
-                  {parts.map((p, j) => {
-                    if (j % 2 === 1) {
-                      return <TaskProposal key={j} taskStr={p} onApprove={onAddTask} />
-                    }
-                    return p ? <div key={j}>{p}</div> : null
-                  })}
+                <div key={i}>
+                  <div className={`${styles.message} ${styles.messageAssistant}`}>
+                    {parts.map((p, j) => {
+                      if (j % 2 === 1) {
+                        return <TaskProposal key={j} taskStr={p} onApprove={onAddTask} />
+                      }
+                      return p ? <div key={j}>{p}</div> : null
+                    })}
+                  </div>
+                  {isLastAssistant && quickReplies && quickReplies.length > 0 && (
+                    <div className={styles.quickReplies}>
+                      {quickReplies.map((reply, ri) => (
+                        <button
+                          key={ri}
+                          className={`${styles.quickReplyChip} ${reply === 'あとで考える' ? styles.quickReplySkip : ''}`}
+                          onClick={() => { sendMessage(reply); }}
+                          disabled={isLoading}
+                        >
+                          {reply}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )
             }

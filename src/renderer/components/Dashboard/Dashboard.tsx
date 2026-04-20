@@ -10,6 +10,7 @@ import {
 } from '@dnd-kit/core'
 import { useState } from 'react'
 import type { Task, ZoneType } from '../../types/task'
+import type { AppTag } from '../../types/tag'
 import { ZONE_LIMITS } from '../../types/task'
 import { Zone } from '../Zone/Zone'
 import { FlightStrip } from '../FlightStrip/FlightStrip'
@@ -25,10 +26,16 @@ interface DashboardProps {
   defaultTimer: number
   onTimerEvent?: (event: 'start' | 'wrapup' | 'complete', taskTitle: string, remainingMin?: number) => void
   onSuggestPriority?: () => void
+  tags?: AppTag[]
 }
 
-export function Dashboard({ tasksByZone, allTasks = [], onComplete, onUndoComplete, onMoveTask, onClickTask, defaultTimer, onTimerEvent, onSuggestPriority }: DashboardProps) {
+export function Dashboard({ tasksByZone, allTasks = [], onComplete, onUndoComplete, onMoveTask, onClickTask, defaultTimer, onTimerEvent, onSuggestPriority, tags = [] }: DashboardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
+  const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null)
+
+  const filteredOutTaskIds = activeTagFilter
+    ? new Set(allTasks.filter(t => !(t.tagIds ?? []).includes(activeTagFilter)).map(t => t.id))
+    : undefined
 
   const blockedTaskIds = new Set(
     allTasks
@@ -84,6 +91,26 @@ export function Dashboard({ tasksByZone, allTasks = [], onComplete, onUndoComple
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
+      {tags.length > 0 && (
+        <div className={styles.tagFilterBar}>
+          <button
+            className={`${styles.tagFilterBtn} ${!activeTagFilter ? styles.tagFilterBtnActive : ''}`}
+            onClick={() => setActiveTagFilter(null)}
+          >
+            すべて
+          </button>
+          {tags.map(tag => (
+            <button
+              key={tag.id}
+              className={`${styles.tagFilterBtn} ${activeTagFilter === tag.id ? styles.tagFilterBtnActive : ''}`}
+              style={activeTagFilter === tag.id ? { background: tag.color + '33', borderColor: tag.color, color: tag.color } : { borderColor: tag.color + '88', color: tag.color }}
+              onClick={() => setActiveTagFilter(prev => prev === tag.id ? null : tag.id)}
+            >
+              {tag.name}
+            </button>
+          ))}
+        </div>
+      )}
       <div className={styles.dashboard}>
         {/* 左列: ACTIVE + NEXT ACTION（縦積み） */}
         <div className={styles.leftColumn}>
@@ -100,6 +127,7 @@ export function Dashboard({ tasksByZone, allTasks = [], onComplete, onUndoComple
               defaultTimer={defaultTimer}
               onTimerEvent={onTimerEvent}
               blockedTaskIds={blockedTaskIds}
+              filteredOutTaskIds={filteredOutTaskIds}
             />
           </div>
           <div className={styles.nextZone}>
@@ -113,6 +141,7 @@ export function Dashboard({ tasksByZone, allTasks = [], onComplete, onUndoComple
               onComplete={onComplete}
               onClickTask={onClickTask}
               blockedTaskIds={blockedTaskIds}
+              filteredOutTaskIds={filteredOutTaskIds}
             />
           </div>
         </div>
@@ -130,6 +159,7 @@ export function Dashboard({ tasksByZone, allTasks = [], onComplete, onUndoComple
             onClickTask={onClickTask}
             onSuggestPriority={onSuggestPriority}
             blockedTaskIds={blockedTaskIds}
+            filteredOutTaskIds={filteredOutTaskIds}
           />
         </div>
 
@@ -146,6 +176,7 @@ export function Dashboard({ tasksByZone, allTasks = [], onComplete, onUndoComple
             onUndo={onUndoComplete}
             onClickTask={onClickTask}
             blockedTaskIds={blockedTaskIds}
+            filteredOutTaskIds={filteredOutTaskIds}
           />
         </div>
       </div>

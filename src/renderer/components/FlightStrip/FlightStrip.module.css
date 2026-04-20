@@ -60,6 +60,11 @@
   cursor: grabbing;
 }
 
+.filteredOut {
+  opacity: 0.25;
+  pointer-events: none;
+}
+
 /* 上段: ID + 時刻 + 優先度バッジ */
 .topRow {
   display: flex;
@@ -247,4 +252,11 @@
 .blockedIndicator {
   font-size: 0.75rem;
   opacity: 0.7;
+}
+
+.clarificationBadge {
+  font-size: 0.72rem;
+  color: var(--zone-active, #5B8DEF);
+  opacity: 0.8;
+  letter-spacing: 0;
 }

@@ -31,6 +31,13 @@ export interface IElectronAPI {
   suggestPriority: (tasks: Task[]) => Promise<{ proposals: Array<{ taskId: string; title: string; suggestedZone: string; reason: string }>; summary: string }>
   // Connection test
   testChatConnection: (apiKey: string) => Promise<{ ok: boolean; error?: string }>
+  // Phase B: Weekly report overlay
+  getPendingReport: () => Promise<{ weekLabel: string; taskCount: number; reportMd: string } | null>
+  // C-1: タグ管理
+  loadTags: () => Promise<import('../renderer/types/tag').AppTag[]>
+  saveTags: (tags: import('../renderer/types/tag').AppTag[]) => Promise<void>
+  // C-3: レポート履歴
+  listReports: () => Promise<Array<{ weekLabel: string; taskCount: number; titles: string[] }>>
 }
 
 declare global {
