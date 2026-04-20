@@ -80,6 +80,14 @@ export async function runSweep(settings: AppSettings): Promise<void> {
       await fs.writeFile(settingsFile, JSON.stringify({ ...settingsData, lastSweepAt: new Date().toISOString() }, null, 2), 'utf-8')
     } catch { /* settings更新失敗は致命的ではない */ }
 
+    const pendingReport = {
+      weekLabel,
+      taskCount: clearedTasks.length,
+      reportMd: reportResult?.reportMd ?? '',
+    }
+    const pendingReportFile = join(dataDir, 'pending-sweep-report.json')
+    await fs.writeFile(pendingReportFile, JSON.stringify(pendingReport, null, 2), 'utf-8').catch(() => {})
+
     sendProgress({
       phase: 'done',
       taskCount: clearedTasks.length,

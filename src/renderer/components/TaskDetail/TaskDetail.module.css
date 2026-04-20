@@ -174,6 +174,28 @@
   gap: var(--space-sm);
 }
 
+.dragHandle {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: grab;
+  padding: 2px 4px;
+  font-size: 1rem;
+  line-height: 1;
+  touch-action: none;
+  opacity: 0.4;
+  transition: opacity var(--transition-fast);
+}
+
+.dragHandle:hover {
+  opacity: 0.9;
+  color: var(--text-secondary);
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
 .subtaskCheckbox {
   cursor: pointer;
   width: 16px;
@@ -261,11 +283,191 @@
   border-color: var(--zone-cleared);
 }
 
+/* Tags */
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  align-items: center;
+}
+
+.tagChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid;
+  letter-spacing: 0.03em;
+}
+
+.tagRemoveBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.9rem;
+  line-height: 1;
+  color: inherit;
+  opacity: 0.7;
+}
+
+.tagRemoveBtn:hover { opacity: 1; }
+
+.tagAddBtn {
+  font-size: 0.78rem;
+  background: transparent;
+  border: 1px dashed var(--border-default);
+  color: var(--text-muted);
+  padding: 2px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.tagAddBtn:hover {
+  border-color: var(--border-hover);
+  color: var(--text-secondary);
+}
+
+.tagInputArea {
+  margin-top: var(--space-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm);
+}
+
+.tagColorRow {
+  display: flex;
+  gap: 6px;
+}
+
+.colorDot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: transform var(--transition-fast);
+}
+
+.colorDot:hover { transform: scale(1.2); }
+
+.colorDotActive {
+  border-color: var(--text-primary);
+  transform: scale(1.2);
+}
+
+.tagInputRow {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.tagInput {
+  flex: 1;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  padding: 4px 8px;
+}
+
+.tagInput:focus {
+  outline: none;
+  border-color: var(--border-hover);
+}
+
+.tagCreateBtn {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.tagCreateBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.tagCreateBtn:not(:disabled):hover {
+  background: var(--zone-next);
+  color: var(--bg-primary);
+  border-color: var(--zone-next);
+}
+
+.tagExistingList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.tagExistingChip {
+  font-size: 0.75rem;
+  background: transparent;
+  border: 1px solid;
+  padding: 2px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.tagExistingChip:hover { opacity: 0.75; }
+
+.tagSuggestions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.tagSuggestionLabel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.tagSuggestionChip {
+  font-size: 0.75rem;
+  background: transparent;
+  border: 1px dashed;
+  padding: 2px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.tagSuggestionChip:hover { opacity: 0.7; }
+
 /* Dependency */
 .depBlocked {
   font-size: 0.82rem;
   color: #f5a623;
   line-height: 1.4;
+}
+
+/* Clarification */
+.clarificationBtn {
+  background: transparent;
+  border: 1px solid var(--zone-active, #5B8DEF);
+  color: var(--zone-active, #5B8DEF);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.85rem;
+  width: 100%;
+  transition: background var(--transition-fast);
+}
+.clarificationBtn:hover {
+  background: rgba(91, 141, 239, 0.1);
 }
 
 /* Delete task */

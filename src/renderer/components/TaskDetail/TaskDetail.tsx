@@ -1,15 +1,76 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import type { AppTag } from '../../types/tag'
+import { MAX_TAG_NAME_LENGTH, MAX_TAGS, MAX_TAGS_PER_TASK, TAG_COLORS } from '../../types/tag'
+import { getTagSuggestions } from '../../utils/tagUtils'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import type { Task, RecurrenceFrequency } from '../../types/task'
 import styles from './TaskDetail.module.css'
+
+interface SubtaskItemProps {
+  id: string
+  title: string
+  completed: boolean
+  onToggle: () => void
+  onEdit: (v: string) => void
+  onBlur: () => void
+  onDelete: () => void
+}
+
+function SortableSubtaskItem({ id, title, completed, onToggle, onEdit, onBlur, onDelete }: SubtaskItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+  return (
+    <div ref={setNodeRef} style={style} className={styles.subtaskItem}>
+      <button className={styles.dragHandle} {...attributes} {...listeners} title="ドラッグして並び替え">⠿</button>
+      <input
+        type="checkbox"
+        checked={completed}
+        onChange={onToggle}
+        className={styles.subtaskCheckbox}
+      />
+      <input
+        type="text"
+        value={title}
+        onChange={(e) => onEdit(e.target.value)}
+        onBlur={onBlur}
+        className={`${styles.subtaskInput} ${completed ? styles.completedSubtask : ''}`}
+      />
+      <button onClick={onDelete} className={styles.deleteSubtaskBtn} title="削除">✕</button>
+    </div>
+  )
+}
 
 interface TaskDetailProps {
   task: Task
   allTasks?: Task[]
+  tags?: AppTag[]
   onUpdate: (taskId: string, updates: Partial<Task>) => void
   onDelete?: (taskId: string) => void
+  onTagsChange?: (tags: AppTag[]) => void
+  onStartClarification?: (task: Task) => void
 }
 
-export function TaskDetail({ task, allTasks = [], onUpdate, onDelete }: TaskDetailProps) {
+export function TaskDetail({ task, allTasks = [], tags = [], onUpdate, onDelete, onTagsChange, onStartClarification }: TaskDetailProps) {
   const [estimatedTime, setEstimatedTime] = useState(task.estimatedTime || 25)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isEditingTitle, setIsEditingTitle] = useState(false)
@@ -18,6 +79,7 @@ export function TaskDetail({ task, allTasks = [], onUpdate, onDelete }: TaskDeta
   const [scheduledStartDate, setScheduledStartDate] = useState(task.scheduledStart ? task.scheduledStart.split('T')[0] : '')
   const [subtasks, setSubtasks] = useState(task.subtasks || [])
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('')
+  const [isSubtaskComposing, setIsSubtaskComposing] = useState(false)
   const [recurrenceFreq, setRecurrenceFreq] = useState<RecurrenceFrequency | ''>(task.recurrence?.frequency ?? '')
   const [recurrenceDayOfWeek, setRecurrenceDayOfWeek] = useState(task.recurrence?.dayOfWeek ?? 1)
   const [recurrenceDayOfMonth, setRecurrenceDayOfMonth] = useState(task.recurrence?.dayOfMonth ?? 1)
@@ -68,6 +130,64 @@ export function TaskDetail({ task, allTasks = [], onUpdate, onDelete }: TaskDeta
     onUpdate(task.id, { subtasks: newSubtasks })
   }
   
+  // タグ関連
+  const [tagInput, setTagInput] = useState('')
+  const [showTagInput, setShowTagInput] = useState(false)
+  const [selectedColor, setSelectedColor] = useState(TAG_COLORS[0])
+  const tagInputRef = useRef<HTMLInputElement>(null)
+
+  const assignedTagIds = task.tagIds ?? []
+  const assignedTags = assignedTagIds.map(id => tags.find(t => t.id === id)).filter(Boolean) as AppTag[]
+  const suggestions = getTagSuggestions(task, tags, allTasks)
+
+  const handleAddTag = (tagId: string) => {
+    if (assignedTagIds.includes(tagId) || assignedTagIds.length >= MAX_TAGS_PER_TASK) return
+    onUpdate(task.id, { tagIds: [...assignedTagIds, tagId] })
+  }
+
+  const handleRemoveTag = (tagId: string) => {
+    onUpdate(task.id, { tagIds: assignedTagIds.filter(id => id !== tagId) })
+  }
+
+  const handleCreateTag = () => {
+    const name = tagInput.trim().slice(0, MAX_TAG_NAME_LENGTH)
+    if (!name || !onTagsChange) return
+    if (tags.find(t => t.name.toLowerCase() === name.toLowerCase())) {
+      const existing = tags.find(t => t.name.toLowerCase() === name.toLowerCase())!
+      handleAddTag(existing.id)
+      setTagInput('')
+      setShowTagInput(false)
+      return
+    }
+    if (tags.length >= MAX_TAGS) return
+    const newTag: AppTag = {
+      id: 'tag-' + Math.random().toString(36).slice(2, 10),
+      name,
+      color: selectedColor,
+      createdAt: new Date().toISOString(),
+    }
+    const newTags = [...tags, newTag]
+    onTagsChange(newTags)
+    onUpdate(task.id, { tagIds: [...assignedTagIds, newTag.id] })
+    setTagInput('')
+    setShowTagInput(false)
+  }
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIndex = subtasks.findIndex(st => st.id === active.id)
+    const newIndex = subtasks.findIndex(st => st.id === over.id)
+    const reordered = arrayMove(subtasks, oldIndex, newIndex)
+    setSubtasks(reordered)
+    onUpdate(task.id, { subtasks: reordered })
+  }
+
   const handleAddSubtask = () => {
     if (!newSubtaskTitle.trim() || subtasks.length >= 3) return;
     const newId = 'st-' + Math.random().toString(36).substring(2, 9)
@@ -193,33 +313,37 @@ export function TaskDetail({ task, allTasks = [], onUpdate, onDelete }: TaskDeta
       
       <div className={styles.section}>
         <label className={styles.label}>サブタスク (最大3つ)</label>
-        <div className={styles.subtasksList}>
-          {subtasks.map((st) => (
-            <div key={st.id} className={styles.subtaskItem}>
-              <input 
-                type="checkbox" 
-                checked={st.completed}
-                onChange={() => handleToggleSubtask(st.id)}
-                className={styles.subtaskCheckbox}
-              />
-              <input
-                type="text"
-                value={st.title}
-                onChange={(e) => handleEditSubtask(st.id, e.target.value)}
-                onBlur={() => onUpdate(task.id, { subtasks })}
-                className={`${styles.subtaskInput} ${st.completed ? styles.completedSubtask : ''}`}
-              />
-              <button onClick={() => handleDeleteSubtask(st.id)} className={styles.deleteSubtaskBtn} title="削除">✕</button>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={subtasks.map(st => st.id)} strategy={verticalListSortingStrategy}>
+            <div className={styles.subtasksList}>
+              {subtasks.map((st) => (
+                <SortableSubtaskItem
+                  key={st.id}
+                  id={st.id}
+                  title={st.title}
+                  completed={st.completed}
+                  onToggle={() => handleToggleSubtask(st.id)}
+                  onEdit={(v) => handleEditSubtask(st.id, v)}
+                  onBlur={() => onUpdate(task.id, { subtasks })}
+                  onDelete={() => handleDeleteSubtask(st.id)}
+                />
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
         {subtasks.length < 3 && (
           <div className={styles.addSubtaskContainer}>
             <input
               type="text"
               value={newSubtaskTitle}
               onChange={(e) => setNewSubtaskTitle(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAddSubtask()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !isSubtaskComposing && !(e.nativeEvent as any).isComposing) {
+                  handleAddSubtask()
+                }
+              }}
+              onCompositionStart={() => setIsSubtaskComposing(true)}
+              onCompositionEnd={() => setIsSubtaskComposing(false)}
               placeholder="+ サブタスクを追加 (Enterで確定)"
               className={styles.addSubtaskInput}
             />
@@ -265,6 +389,84 @@ export function TaskDetail({ task, allTasks = [], onUpdate, onDelete }: TaskDeta
           </select>
         )}
       </div>
+      {/* タグセクション */}
+      <div className={styles.section}>
+        <label className={styles.label}>🏷️ タグ</label>
+        <div className={styles.tagList}>
+          {assignedTags.map(tag => (
+            <span key={tag.id} className={styles.tagChip} style={{ background: tag.color + '33', borderColor: tag.color, color: tag.color }}>
+              {tag.name}
+              <button className={styles.tagRemoveBtn} onClick={() => handleRemoveTag(tag.id)} aria-label={`${tag.name}を削除`}>×</button>
+            </span>
+          ))}
+          {assignedTagIds.length < MAX_TAGS_PER_TASK && (
+            <button className={styles.tagAddBtn} onClick={() => { setShowTagInput(v => !v); setTimeout(() => tagInputRef.current?.focus(), 50) }}>
+              + タグ
+            </button>
+          )}
+        </div>
+
+        {showTagInput && (
+          <div className={styles.tagInputArea}>
+            <div className={styles.tagColorRow}>
+              {TAG_COLORS.map(c => (
+                <button
+                  key={c}
+                  className={`${styles.colorDot} ${selectedColor === c ? styles.colorDotActive : ''}`}
+                  style={{ background: c }}
+                  onClick={() => setSelectedColor(c)}
+                  aria-label={c}
+                />
+              ))}
+            </div>
+            <div className={styles.tagInputRow}>
+              <input
+                ref={tagInputRef}
+                type="text"
+                value={tagInput}
+                onChange={e => setTagInput(e.target.value.slice(0, MAX_TAG_NAME_LENGTH))}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleCreateTag() }}
+                placeholder="タグ名（最大10文字）"
+                className={styles.tagInput}
+                maxLength={MAX_TAG_NAME_LENGTH}
+              />
+              <button className={styles.tagCreateBtn} onClick={handleCreateTag} disabled={!tagInput.trim()}>作成</button>
+            </div>
+            {tags.filter(t => !assignedTagIds.includes(t.id)).length > 0 && (
+              <div className={styles.tagExistingList}>
+                {tags.filter(t => !assignedTagIds.includes(t.id)).map(tag => (
+                  <button
+                    key={tag.id}
+                    className={styles.tagExistingChip}
+                    style={{ borderColor: tag.color, color: tag.color }}
+                    onClick={() => { handleAddTag(tag.id); setShowTagInput(false) }}
+                  >
+                    {tag.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Echo Auto-Fill 候補（常時表示、無視可） */}
+        {suggestions.length > 0 && (
+          <div className={styles.tagSuggestions}>
+            <span className={styles.tagSuggestionLabel}>◈ Echo 候補:</span>
+            {suggestions.map(tag => (
+              <button
+                key={tag.id}
+                className={styles.tagSuggestionChip}
+                style={{ borderColor: tag.color, color: tag.color }}
+                onClick={() => handleAddTag(tag.id)}
+              >
+                {tag.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
       {allTasks.length > 1 && (
         <div className={styles.section}>
           <label className={styles.label}>🔗 前提タスク（このタスクの前に完了が必要）</label>
@@ -288,6 +490,17 @@ export function TaskDetail({ task, allTasks = [], onUpdate, onDelete }: TaskDeta
               ? <span className={styles.depBlocked}>⚠ 「{dep.title}」が完了するまでACTIVEに移動できません</span>
               : null
           })()}
+        </div>
+      )}
+
+      {onStartClarification && task.zone !== 'CLEARED' && (
+        <div className={styles.section}>
+          <button
+            className={styles.clarificationBtn}
+            onClick={() => onStartClarification(task)}
+          >
+            ◈ Echoに詳細を聞いてもらう
+          </button>
         </div>
       )}
 

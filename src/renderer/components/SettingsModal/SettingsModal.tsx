@@ -1,16 +1,21 @@
 import { useEffect, useState } from 'react'
 import styles from './SettingsModal.module.css'
+import type { AppTag } from '../../types/tag'
+import { MAX_TAG_NAME_LENGTH, MAX_TAGS, TAG_COLORS } from '../../types/tag'
+import { findSimilarTagPairs } from '../../utils/tagUtils'
 
-type SettingsTab = 'general' | 'ai-secretary'
+type SettingsTab = 'general' | 'ai-secretary' | 'tags'
 
 interface SettingsModalProps {
   isOpen: boolean
   onClose: () => void
   defaultTimer?: number
   onSaveSettings?: (timer: number) => void
+  tags?: AppTag[]
+  onTagsChange?: (tags: AppTag[]) => void
 }
 
-export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer = 25, onSaveSettings }: SettingsModalProps) {
+export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer = 25, onSaveSettings, tags = [], onTagsChange }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>('general')
   const [obsidianPath, setObsidianPath] = useState('~/Documents/Obsidian/kecku_knowledge_brain/Task-Hack/')
   const [sweepSchedule, setSweepSchedule] = useState('0 22 * * 0')
@@ -23,6 +28,9 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
   const [sweepMessage, setSweepMessage] = useState('')
   const [connectionTest, setConnectionTest] = useState<{ ok: boolean; error?: string } | null>(null)
   const [isTestingConnection, setIsTestingConnection] = useState(false)
+  const [newTagName, setNewTagName] = useState('')
+  const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0])
+  const similarPairs = findSimilarTagPairs(tags)
 
   useEffect(() => {
     setDefaultTimer(propDefaultTimer)
@@ -131,6 +139,12 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
             onClick={() => setActiveTab('ai-secretary')}
           >
             AI秘書 (Echo)
+          </button>
+          <button
+            className={`${styles.tab} ${activeTab === 'tags' ? styles.active : ''}`}
+            onClick={() => setActiveTab('tags')}
+          >
+            🏷️ タグ管理
           </button>
         </div>
 
@@ -257,6 +271,90 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
                 <div className={styles.sweepMessage}>{sweepMessage}</div>
               )}
               <span className={styles.help}>CLEAREDタスクを集計・アーカイブし、週次レポートを生成します。</span>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'tags' && (
+          <div className={styles.tabContent}>
+            {similarPairs.length > 0 && (
+              <div className={styles.tagSimilarWarning}>
+                <span>◈ Echo 整理提案:</span>
+                {similarPairs.map(([a, b]) => (
+                  <div key={`${a.id}-${b.id}`} className={styles.tagSimilarRow}>
+                    <span style={{ color: a.color }}>「{a.name}」</span>
+                    <span className={styles.tagSimilarSep}>と</span>
+                    <span style={{ color: b.color }}>「{b.name}」</span>
+                    <span className={styles.tagSimilarSep}>は似ています</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className={styles.section}>
+              <label>新規タグ作成 ({tags.length}/{MAX_TAGS})</label>
+              <div className={styles.tagColorRowSettings}>
+                {TAG_COLORS.map(c => (
+                  <button
+                    key={c}
+                    className={styles.colorDotSettings}
+                    style={{ background: c, outline: newTagColor === c ? `2px solid ${c}` : 'none', outlineOffset: '2px' }}
+                    onClick={() => setNewTagColor(c)}
+                    aria-label={c}
+                  />
+                ))}
+              </div>
+              <div className={styles.inputRow}>
+                <input
+                  type="text"
+                  value={newTagName}
+                  onChange={e => setNewTagName(e.target.value.slice(0, MAX_TAG_NAME_LENGTH))}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.nativeEvent.isComposing && newTagName.trim() && tags.length < MAX_TAGS && onTagsChange) {
+                      const t: AppTag = { id: 'tag-' + Math.random().toString(36).slice(2, 10), name: newTagName.trim(), color: newTagColor, createdAt: new Date().toISOString() }
+                      onTagsChange([...tags, t])
+                      setNewTagName('')
+                    }
+                  }}
+                  placeholder={`タグ名（最大${MAX_TAG_NAME_LENGTH}文字）`}
+                  className={styles.input}
+                  maxLength={MAX_TAG_NAME_LENGTH}
+                  disabled={tags.length >= MAX_TAGS}
+                />
+                <button
+                  className={styles.iconButton}
+                  disabled={!newTagName.trim() || tags.length >= MAX_TAGS || !onTagsChange}
+                  onClick={() => {
+                    if (!newTagName.trim() || !onTagsChange) return
+                    const t: AppTag = { id: 'tag-' + Math.random().toString(36).slice(2, 10), name: newTagName.trim(), color: newTagColor, createdAt: new Date().toISOString() }
+                    onTagsChange([...tags, t])
+                    setNewTagName('')
+                  }}
+                >
+                  作成
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.section}>
+              <label>タグ一覧</label>
+              {tags.length === 0 && <span className={styles.help}>タグがまだありません。</span>}
+              <div className={styles.tagManageList}>
+                {tags.map(tag => (
+                  <div key={tag.id} className={styles.tagManageRow}>
+                    <span className={styles.tagManageChip} style={{ borderColor: tag.color, color: tag.color, background: tag.color + '22' }}>
+                      {tag.name}
+                    </span>
+                    <button
+                      className={styles.tagDeleteBtn}
+                      onClick={() => onTagsChange?.(tags.filter(t => t.id !== tag.id))}
+                      aria-label={`${tag.name}を削除`}
+                    >
+                      削除
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}

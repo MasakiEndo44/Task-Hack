@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTaskReducer } from './hooks/useTaskReducer'
 import type { Task, ZoneType } from './types/task'
+import type { AppTag } from './types/tag'
 import type { SweepStatus } from './types/sweep'
 import { Clock } from './components/Clock/Clock'
 import { StatusBar } from './components/StatusBar/StatusBar'
@@ -95,7 +96,26 @@ function App(): React.JSX.Element {
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [defaultTimer, setDefaultTimer] = useState(25)
   const [sweepStatus, setSweepStatus] = useState<SweepStatus | null>(null)
+  const [pendingReport, setPendingReport] = useState<{ weekLabel: string; taskCount: number; reportMd: string } | null>(null)
+  const setTimelineTabRef = useRef<((tab: 'today' | 'history') => void) | null>(null)
+  const [tags, setTags] = useState<AppTag[]>([])
   const injectEchoMessageRef = useRef<((text: string) => void) | null>(null)
+  const startClarificationRef = useRef<((task: Task) => void) | null>(null)
+
+  useEffect(() => {
+    window.api?.loadTags?.().then(loaded => { if (loaded) setTags(loaded) })
+  }, [])
+
+  const handleTagsChange = useCallback((newTags: AppTag[]) => {
+    setTags(newTags)
+    window.api?.saveTags?.(newTags)
+  }, [])
+
+  useEffect(() => {
+    window.api?.getPendingReport?.().then(report => {
+      if (report) setPendingReport(report)
+    })
+  }, [])
 
   useEffect(() => {
     if (window.api?.onSweepProgress) {
@@ -143,6 +163,15 @@ function App(): React.JSX.Element {
 
   const handleRegisterInjectMessage = useCallback((fn: (text: string) => void) => {
     injectEchoMessageRef.current = fn
+  }, [])
+
+  const handleRegisterStartClarification = useCallback((fn: (task: Task) => void) => {
+    startClarificationRef.current = fn
+  }, [])
+
+  const handleStartClarification = useCallback((task: Task) => {
+    startClarificationRef.current?.(task)
+    setIsChatOpen(true)
   }, [])
 
   // ボディ・ダブリング: タイマーイベントをChatDrawerに転送
@@ -201,7 +230,7 @@ function App(): React.JSX.Element {
           <button
             className={`${styles.chatButton} ${isChatOpen ? styles.chatButtonActive : ''}`}
             onClick={() => setIsChatOpen(prev => !prev)}
-            aria-label="AI Co-planner を開く"
+            aria-label="Echo AI を開く"
           >
             AI
           </button>
@@ -225,11 +254,13 @@ function App(): React.JSX.Element {
           onAddTask={(payload) => dispatch({ type: 'ADD_TASK', payload })}
           tasks={tasks}
           onRegisterInjectMessage={handleRegisterInjectMessage}
+          onUpdateTask={handleUpdateTask}
+          onRegisterStartClarification={handleRegisterStartClarification}
         />
 
         {/* タイムライン + ダッシュボード */}
         <main className={styles.main}>
-          <Timeline tasks={tasks} />
+          <Timeline tasks={tasks} onRegisterTabSetter={(fn) => { setTimelineTabRef.current = fn }} />
           <Dashboard
             tasksByZone={getTasksByZone()}
             allTasks={tasks}
@@ -240,6 +271,7 @@ function App(): React.JSX.Element {
             defaultTimer={defaultTimer}
             onTimerEvent={handleTimerEvent}
             onSuggestPriority={handleSuggestPriority}
+          tags={tags}
           />
         </main>
       </div>
@@ -256,17 +288,96 @@ function App(): React.JSX.Element {
             allTasks={tasks}
             onUpdate={handleUpdateTask}
             onDelete={handleDeleteTask}
+            tags={tags}
+            onTagsChange={handleTagsChange}
+            onStartClarification={handleStartClarification}
           />
         )}
       </Drawer>
 
       {/* 設定モーダル */}
-      <SettingsModal 
-        isOpen={isSettingsOpen} 
-        onClose={() => setIsSettingsOpen(false)} 
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
         defaultTimer={defaultTimer}
         onSaveSettings={(timer) => setDefaultTimer(timer)}
+        tags={tags}
+        onTagsChange={handleTagsChange}
       />
+
+      {/* 週次レポートオーバーレイ */}
+      {pendingReport && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: 'rgba(0,0,0,0.75)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-default)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '2rem',
+            maxWidth: '600px', width: '90%',
+            maxHeight: '80vh',
+            display: 'flex', flexDirection: 'column', gap: '1rem',
+            color: 'var(--text-primary)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ margin: 0, fontSize: '1.2rem' }}>
+                🛬 週次レポート — {pendingReport.weekLabel}
+              </h2>
+              <button
+                onClick={() => setPendingReport(null)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}
+                aria-label="閉じる"
+              >✕</button>
+            </div>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+              {pendingReport.taskCount}件のタスクが完了しました。
+            </p>
+            <div style={{
+              flex: 1, overflowY: 'auto',
+              background: 'var(--bg-primary)',
+              borderRadius: 'var(--radius-md)',
+              padding: '1rem',
+              fontSize: '0.88rem', lineHeight: '1.6',
+              whiteSpace: 'pre-wrap',
+              color: 'var(--text-secondary)',
+            }}>
+              {pendingReport.reportMd || '（レポート本文なし）'}
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem', alignSelf: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setPendingReport(null)
+                  setTimelineTabRef.current?.('history')
+                }}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--border-hover)',
+                  color: 'var(--text-secondary)',
+                  padding: '0.5rem 1rem',
+                  borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                  fontSize: '0.85rem',
+                }}
+              >
+                📋 履歴を見る
+              </button>
+              <button
+                onClick={() => setPendingReport(null)}
+                style={{
+                  background: 'var(--zone-next)', border: 'none',
+                  color: 'var(--bg-primary)', padding: '0.5rem 1.5rem',
+                  borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                  fontWeight: 600,
+                }}
+              >
+                確認
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )

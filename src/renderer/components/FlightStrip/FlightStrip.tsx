@@ -8,6 +8,7 @@ interface FlightStripProps {
   onClick?: (taskId: string) => void
   isDragging?: boolean
   isBlocked?: boolean
+  isFilteredOut?: boolean
 }
 
 function formatScheduledTime(iso?: string): string | null {
@@ -20,14 +21,15 @@ function formatScheduledTime(iso?: string): string | null {
   })
 }
 
-export function FlightStrip({ task, onComplete, onUndo, onClick, isDragging = false, isBlocked = false }: FlightStripProps) {
+export function FlightStrip({ task, onComplete, onUndo, onClick, isDragging = false, isBlocked = false, isFilteredOut = false }: FlightStripProps) {
   const scheduledTime = formatScheduledTime(task.scheduledStart)
   const isUrgent = task.priority === 'URG'
   const isCleared = task.zone === 'CLEARED'
+  const needsClarification = !task.scheduledStart && !task.notes && task.zone !== 'CLEARED'
 
   return (
     <div
-      className={`${styles.strip} ${styles[task.zone.toLowerCase()]} ${isDragging ? styles.dragging : ''}`}
+      className={`${styles.strip} ${styles[task.zone.toLowerCase()]} ${isDragging ? styles.dragging : ''} ${isFilteredOut ? styles.filteredOut : ''}`}
       data-testid={`flight-strip-${task.id}`}
       onClick={() => onClick?.(task.id)}
     >
@@ -36,6 +38,9 @@ export function FlightStrip({ task, onComplete, onUndo, onClick, isDragging = fa
         <span className={styles.flightId}>{task.id}</span>
         {scheduledTime && (
           <span className={styles.time}>{scheduledTime}</span>
+        )}
+        {needsClarification && (
+          <span className={styles.clarificationBadge} title="Echoが質問を持っています">◈</span>
         )}
         {isBlocked && (
           <span className={styles.blockedIndicator} title="前提タスクが未完了です">🔗</span>

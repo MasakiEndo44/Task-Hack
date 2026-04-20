@@ -150,6 +150,42 @@
   border: 1px solid var(--border-default);
 }
 
+.quickReplies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 12px 8px 12px;
+}
+
+.quickReplyChip {
+  background: transparent;
+  border: 1px solid var(--border-hover);
+  color: var(--text-secondary);
+  border-radius: 12px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  font-family: var(--font-ui);
+}
+
+.quickReplyChip:hover:not(:disabled) {
+  background: var(--bg-elevated);
+  border-color: var(--zone-active, #5B8DEF);
+  color: var(--text-primary);
+}
+
+.quickReplyChip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.quickReplySkip {
+  border-color: var(--border-default);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
 .loading {
   align-self: flex-start;
   color: var(--text-muted);

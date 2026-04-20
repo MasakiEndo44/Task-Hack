@@ -41,6 +41,13 @@ const api = {
   suggestPriority: (tasks: any[]) => ipcRenderer.invoke('priority:suggest', tasks),
   // Connection test
   testChatConnection: (apiKey: string) => ipcRenderer.invoke('testChatConnection', apiKey),
+  // Phase B: Weekly report overlay
+  getPendingReport: () => ipcRenderer.invoke('sweep:getPendingReport'),
+  // C-1: タグ管理
+  loadTags: () => ipcRenderer.invoke('tags:load'),
+  saveTags: (tags: any[]) => ipcRenderer.invoke('tags:save', tags),
+  // C-3: レポート履歴
+  listReports: () => ipcRenderer.invoke('reports:list'),
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

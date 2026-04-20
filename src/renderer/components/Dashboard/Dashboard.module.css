@@ -39,6 +39,36 @@
   min-height: 0;
 }
 
+.tagFilterBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.tagFilterBtn {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: opacity var(--transition-fast), background var(--transition-fast);
+  letter-spacing: 0.03em;
+}
+
+.tagFilterBtn:hover { opacity: 0.75; }
+
+.tagFilterBtnActive {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+}
+
 .activeZone > *,
 .nextZone > *,
 .holdingZone > *,

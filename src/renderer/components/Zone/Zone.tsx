@@ -26,6 +26,7 @@ interface ZoneProps {
   onTimerEvent?: (event: 'start' | 'wrapup' | 'complete', taskTitle: string, remainingMin?: number) => void
   onSuggestPriority?: () => void
   blockedTaskIds?: Set<string>
+  filteredOutTaskIds?: Set<string>
 }
 
 function SortableFlightStrip({
@@ -33,13 +34,15 @@ function SortableFlightStrip({
   onComplete,
   onUndo,
   onClick,
-  isBlocked
+  isBlocked,
+  isFilteredOut
 }: {
   task: Task
   onComplete: (taskId: string) => void
   onUndo?: (taskId: string) => void
   onClick?: (taskId: string) => void
   isBlocked?: boolean
+  isFilteredOut?: boolean
 }) {
   const {
     attributes,
@@ -63,12 +66,12 @@ function SortableFlightStrip({
       {...listeners}
       onClick={() => onClick?.(task.id)}
     >
-      <FlightStrip task={task} onComplete={onComplete} onUndo={onUndo} isDragging={isDragging} isBlocked={isBlocked} />
+      <FlightStrip task={task} onComplete={onComplete} onUndo={onUndo} isDragging={isDragging} isBlocked={isBlocked} isFilteredOut={isFilteredOut} />
     </div>
   )
 }
 
-export function Zone({ zone, title, subtitle, icon, tasks, maxTasks, onComplete, onUndo, onClickTask, defaultTimer = 25, onTimerEvent, onSuggestPriority, blockedTaskIds }: ZoneProps) {
+export function Zone({ zone, title, subtitle, icon, tasks, maxTasks, onComplete, onUndo, onClickTask, defaultTimer = 25, onTimerEvent, onSuggestPriority, blockedTaskIds, filteredOutTaskIds }: ZoneProps) {
   const { setNodeRef, isOver } = useDroppable({ id: zone })
 
   const timerCallbacks: TimerCallbacks | undefined = onTimerEvent ? {
@@ -137,6 +140,7 @@ export function Zone({ zone, title, subtitle, icon, tasks, maxTasks, onComplete,
                 onUndo={onUndo}
                 onClick={onClickTask}
                 isBlocked={blockedTaskIds?.has(task.id)}
+                isFilteredOut={filteredOutTaskIds?.has(task.id)}
               />
             ))
           )}

@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useClock } from '../../hooks/useClock'
 import type { Task } from '../../types/task'
+import { ReportHistory } from '../ReportHistory/ReportHistory'
 import styles from './Timeline.module.css'
 
 interface TimelineProps {
   tasks: Task[]
+  defaultTab?: 'today' | 'history'
+  onRegisterTabSetter?: (fn: (tab: 'today' | 'history') => void) => void
 }
 
 /** ゾーンに対応するCSS変数名 */
@@ -50,7 +53,12 @@ function getMonthDates(now: Date): Date[] {
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-export function Timeline({ tasks }: TimelineProps) {
+export function Timeline({ tasks, defaultTab = 'today', onRegisterTabSetter }: TimelineProps) {
+  const [panelTab, setPanelTab] = useState<'today' | 'history'>(defaultTab)
+
+  useEffect(() => {
+    onRegisterTabSetter?.(setPanelTab)
+  }, [onRegisterTabSetter])
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week')
   const { now } = useClock()
 
@@ -71,22 +79,46 @@ export function Timeline({ tasks }: TimelineProps) {
         <div className={styles.timelineHeaderLeft}>
           <span className={styles.timelineIcon}>◆</span>
           <span className={styles.timelineTitle}>TIMELINE</span>
+          <div className={styles.panelTabs}>
+            <button
+              className={`${styles.panelTab} ${panelTab === 'today' ? styles.panelTabActive : ''}`}
+              onClick={() => setPanelTab('today')}
+            >
+              今日
+            </button>
+            <button
+              className={`${styles.panelTab} ${panelTab === 'history' ? styles.panelTabActive : ''}`}
+              onClick={() => setPanelTab('history')}
+            >
+              📋 履歴
+            </button>
+          </div>
         </div>
-        <div className={styles.viewToggles}>
-          <button 
-            className={`${styles.toggleBtn} ${viewMode === 'week' ? styles.active : ''}`}
-            onClick={() => setViewMode('week')}
-          >
-            Week
-          </button>
-          <button 
-            className={`${styles.toggleBtn} ${viewMode === 'month' ? styles.active : ''}`}
-            onClick={() => setViewMode('month')}
-          >
-            Month
-          </button>
-        </div>
+        {panelTab === 'today' && (
+          <div className={styles.viewToggles}>
+            <button
+              className={`${styles.toggleBtn} ${viewMode === 'week' ? styles.active : ''}`}
+              onClick={() => setViewMode('week')}
+            >
+              Week
+            </button>
+            <button
+              className={`${styles.toggleBtn} ${viewMode === 'month' ? styles.active : ''}`}
+              onClick={() => setViewMode('month')}
+            >
+              Month
+            </button>
+          </div>
+        )}
       </div>
+
+      {panelTab === 'history' && (
+        <div className={styles.historyPanel}>
+          <ReportHistory />
+        </div>
+      )}
+
+      {panelTab === 'today' && (
       <div className={styles.timeline} data-testid="timeline">
         {/* 日付マーカー */}
         <div className={styles.markers}>
@@ -150,6 +182,7 @@ export function Timeline({ tasks }: TimelineProps) {
           </div>
         )}
       </div>
+      )}
     </div>
   )
 }
