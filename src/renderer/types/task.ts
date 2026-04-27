@@ -89,6 +89,9 @@ export interface Task {
 
   /** 前提タスクID（このタスクの前に完了が必要なタスク） */
   dependsOn?: string
+
+  /** タグID一覧（最大3件） */
+  tagIds?: string[]
 }
 
 /** タスク作成時の入力（idとcreatedAtは自動生成） */

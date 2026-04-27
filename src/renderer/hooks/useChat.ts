@@ -1,10 +1,11 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import type { Task } from '../types/task'
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system'
   content: string
   imageBase64?: string
+  isSystemTrigger?: boolean
 }
 
 type OpenAIContentPart =
@@ -24,7 +25,22 @@ function buildApiPayload(messages: ChatMessage[]) {
   })
 }
 
-function buildSystemPrompt(tasks: Task[]): string {
+const QR_RE = /<!--QR:(\[[\s\S]*?\])-->/
+const TU_RE = /<!--TU:(\{[\s\S]*?\})-->/
+const DONE_RE = /<!--DONE:(true|false)-->/
+
+export function parseAssistantMarkers(content: string) {
+  const qrMatch = content.match(QR_RE)
+  const tuMatch = content.match(TU_RE)
+  const doneMatch = content.match(DONE_RE)
+  const quickReplies: string[] | null = qrMatch ? (() => { try { return JSON.parse(qrMatch[1]) } catch { return null } })() : null
+  const taskUpdates: Record<string, unknown> | null = tuMatch ? (() => { try { return JSON.parse(tuMatch[1]) } catch { return null } })() : null
+  const done: boolean | null = doneMatch ? doneMatch[1] === 'true' : null
+  const displayText = content.replace(QR_RE, '').replace(TU_RE, '').replace(DONE_RE, '').trim()
+  return { displayText, quickReplies, taskUpdates, done }
+}
+
+function buildSystemPrompt(tasks: Task[], clarificationTask?: Task | null): string {
   const now = new Date()
   const dateStr = now.toLocaleDateString('ja-JP', {
     year: 'numeric',
@@ -48,6 +64,49 @@ function buildSystemPrompt(tasks: Task[]): string {
     `- HOLDING（待機中）: ${holdingTasks.length}件`
   ].join('\n')
 
+  const dependencyLines = tasks
+    .filter(t => t.dependsOn)
+    .map(t => {
+      const dep = tasks.find(d => d.id === t.dependsOn)
+      return dep ? `- 「${t.title}」→ 先行: 「${dep.title}」(${dep.zone === 'CLEARED' ? '完了済み' : '未完了'})` : null
+    })
+    .filter(Boolean)
+
+  const dependencySection = dependencyLines.length > 0
+    ? `\n## タスク依存関係（前提タスク）\n${dependencyLines.join('\n')}`
+    : ''
+
+  const clarificationSection = clarificationTask ? `
+
+## 5W2H明確化モード（最優先ルール）
+タスク「${clarificationTask.title}」の詳細を確認します:
+- 着手予定: ${clarificationTask.scheduledStart || '未設定'}
+- 推定時間: ${clarificationTask.estimatedTime ? clarificationTask.estimatedTime + '分' : '未設定'}
+- メモ: ${clarificationTask.notes || 'なし'}
+
+### 必須ルール
+1. 欠落情報を1つだけ質問する（scheduledStartが設定済みならWHENは聞かない）
+2. 回答の末尾に必ず以下3行のマーカーを出力する（省略禁止）:
+<!--QR:["選択肢A","選択肢B","選択肢C","あとで考える"]-->
+<!--TU:{"notes":"ユーザーの回答をここに記録"}-->
+<!--DONE:false-->
+
+### マーカー記入例
+質問「場所はどこですか？」→ ユーザー「会議室B」の場合:
+<!--QR:["会議室A","会議室B","自席","あとで考える"]-->
+<!--TU:{"notes":"場所: 会議室B"}-->
+<!--DONE:false-->
+
+### 最終ターン（3問目回答後 or「あとで考える」選択後）
+確認を締める一言 + 以下のマーカー:
+<!--QR:[]-->
+<!--TU:{"notes":"[全回答を統合したメモ]"}-->
+<!--DONE:true-->
+
+### その他
+- 口調はEchoらしく自然に（「〜ですね ✈」など）
+- タスク提案のJSONブロックはこのモード中は出力しない` : ''
+
   return `あなたはTask-Hack AIです。ADHDを持つユーザーの仕事上のタスク管理を支援するAI秘書です。
 
 【口調・スタイル】
@@ -57,7 +116,16 @@ function buildSystemPrompt(tasks: Task[]): string {
 
 【タスク提案の判断基準】
 - ユーザーのメッセージに期限・作業内容が明示されている → 即座に全タスクを提案する（質問不要）
+- 画像が添付されている場合 → 画像の内容を読み取り、確認なしに即タスク提案する
 - 期限や内容が不明な場合 → 一つだけ確認してから提案する
+
+【画像が添付された場合のルール（最優先）】
+- 画像内のすべてのテキスト・日付・担当者・ステータス・数値を読み取る
+- スクリーンショット（タスク管理ツール・カレンダー・チャット・資料）からタスクを生成する
+- 手書きメモ・付箋・ホワイトボードの写真もOCRとして扱いタスク化する
+- 人物のプライバシーは関係ない。作業内容・情報の把握のみに集中する
+- 読み取った情報を冒頭で一行サマリー（例：「○○の画像から〜件の作業を検出しました」）してからタスクを提案する
+- 画像だけで内容が判断できる場合は追加質問不要。即提案する
 
 【MECE分解ルール（最重要）】
 - ユーザーのメッセージに複数の作業が含まれる場合、必ずすべてを個別タスクとして列挙する
@@ -93,12 +161,16 @@ function buildSystemPrompt(tasks: Task[]): string {
 
 ## 現在の状況
 - 日時: ${dateStr} ${timeStr}
-${boardLines}`
+${boardLines}${dependencySection}${clarificationSection}`
 }
 
-export function useChat(tasks: Task[]) {
+export function useChat(tasks: Task[], onUpdateTask?: (taskId: string, updates: Partial<Task>) => void) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [clarificationTask, setClarificationTask] = useState<Task | null>(null)
+  const clarificationTaskRef = useRef<Task | null>(null)
+  const clarificationStartIndexRef = useRef<number>(-1)
+  const clarificationAnswerCountRef = useRef<number>(0)
 
   // clean up listeners when unmounting
   useEffect(() => {
@@ -107,8 +179,30 @@ export function useChat(tasks: Task[]) {
     }
   }, [])
 
-  const sendMessage = useCallback(async (content: string, imageBase64?: string) => {
-    const userMessage: ChatMessage = { role: 'user', content, imageBase64 }
+  const sendMessage = useCallback(async (content: string, imageBase64?: string, isSystemTrigger?: boolean) => {
+    const isInClarification = !!clarificationTaskRef.current
+    // clarification中のユーザー回答をカウント（トリガー・「あとで考える」除く）
+    if (isInClarification && !isSystemTrigger && content !== 'あとで考える') {
+      clarificationAnswerCountRef.current += 1
+    }
+    // 「あとで考える」でclarificationモード終了 → フォールバック更新
+    if (content === 'あとで考える' && isInClarification) {
+      const ctask = clarificationTaskRef.current!
+      setClarificationTask(null)
+      clarificationTaskRef.current = null
+      // フォールバック: 収集済み回答でnotesを更新
+      setMessages(prev => {
+        const answers = prev
+          .slice(clarificationStartIndexRef.current)
+          .filter(m => m.role === 'user' && !m.isSystemTrigger && m.content !== 'あとで考える')
+          .map(m => m.content)
+        if (answers.length > 0 && onUpdateTask) {
+          onUpdateTask(ctask.id, { notes: answers.join(' / ') })
+        }
+        return prev
+      })
+    }
+    const userMessage: ChatMessage = { role: 'user', content, imageBase64, ...(isSystemTrigger ? { isSystemTrigger: true } : {}) }
 
     let currentHistory: ChatMessage[] = []
     setMessages(prev => {
@@ -129,7 +223,7 @@ export function useChat(tasks: Task[]) {
         return
       }
 
-      const systemPrompt = buildSystemPrompt(tasks)
+      const systemPrompt = buildSystemPrompt(tasks, clarificationTaskRef.current)
       const payload = buildApiPayload(currentHistory)
 
       // add empty assistant message to update progressively
@@ -149,6 +243,38 @@ export function useChat(tasks: Task[]) {
       window.api.onChatDone(() => {
         setIsLoading(false)
         window.api.offChatListeners()
+        const ctask = clarificationTaskRef.current
+        if (!ctask) return
+        setMessages(prev => {
+          const last = prev[prev.length - 1]
+          if (last?.role !== 'assistant') return prev
+          const { taskUpdates, done } = parseAssistantMarkers(last.content)
+
+          // TUマーカーによる明示的な更新
+          if (taskUpdates && Object.keys(taskUpdates).length > 0 && onUpdateTask) {
+            onUpdateTask(ctask.id, taskUpdates as Partial<Task>)
+          }
+
+          // DONEまたは3回答達成 → フォールバック更新 + セッション終了
+          const shouldEnd = done === true || clarificationAnswerCountRef.current >= 3
+          if (shouldEnd) {
+            // TUで notes が更新されていない場合、収集した回答を notes に書き込む
+            const hasNotesUpdate = taskUpdates && 'notes' in taskUpdates
+            if (!hasNotesUpdate && onUpdateTask) {
+              const answers = prev
+                .slice(clarificationStartIndexRef.current)
+                .filter(m => m.role === 'user' && !m.isSystemTrigger)
+                .map(m => m.content)
+              if (answers.length > 0) {
+                onUpdateTask(ctask.id, { notes: answers.join(' / ') })
+              }
+            }
+            setClarificationTask(null)
+            clarificationTaskRef.current = null
+            clarificationAnswerCountRef.current = 0
+          }
+          return prev
+        })
       })
 
       window.api.onChatError((msg) => {
@@ -185,5 +311,17 @@ export function useChat(tasks: Task[]) {
     setMessages(prev => [...prev, { role: 'assistant', content: text }])
   }, [])
 
-  return { messages, sendMessage, isLoading, injectMessage }
+  const startClarification = useCallback((task: Task) => {
+    setClarificationTask(task)
+    clarificationTaskRef.current = task
+    clarificationAnswerCountRef.current = 0
+    // startIndexはメッセージ追加後に設定（+2: triggerユーザー + Echoの最初の応答の前）
+    setMessages(prev => {
+      clarificationStartIndexRef.current = prev.length + 1 // trigger追加後のindex
+      return prev
+    })
+    sendMessage(`[5W2H clarification start] タスク「${task.title}」の確認を始めてください。`, undefined, true)
+  }, [sendMessage])
+
+  return { messages, sendMessage, isLoading, injectMessage, startClarification, clarificationTask }
 }

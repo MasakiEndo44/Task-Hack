@@ -30,6 +30,48 @@
   letter-spacing: 0.2em;
 }
 
+.panelTabs {
+  display: flex;
+  gap: 2px;
+  margin-left: var(--space-sm);
+}
+
+.panelTab {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.panelTab:hover {
+  color: var(--text-secondary);
+  border-color: var(--border-default);
+}
+
+.panelTabActive {
+  background: var(--bg-elevated);
+  color: var(--zone-cleared);
+  border-color: var(--zone-cleared);
+}
+
+.historyPanel {
+  max-height: 260px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-default) transparent;
+  animation: fadeIn 0.18s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .viewToggles {
   display: flex;
   gap: var(--space-xs);

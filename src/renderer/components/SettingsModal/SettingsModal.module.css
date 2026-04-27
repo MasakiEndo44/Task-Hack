@@ -219,6 +219,82 @@
   padding: 4px 0;
 }
 
+/* Tag management */
+.tagSimilarWarning {
+  background: rgba(232, 125, 62, 0.08);
+  border: 1px solid rgba(232, 125, 62, 0.3);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: var(--space-md);
+}
+
+.tagSimilarRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.tagSimilarSep { color: var(--text-muted); }
+
+.tagColorRowSettings {
+  display: flex;
+  gap: 8px;
+  margin-bottom: var(--space-sm);
+}
+
+.colorDotSettings {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: transform var(--transition-fast);
+}
+
+.colorDotSettings:hover { transform: scale(1.2); }
+
+.tagManageList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.tagManageRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.tagManageChip {
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 12px;
+  border: 1px solid;
+  letter-spacing: 0.03em;
+}
+
+.tagDeleteBtn {
+  background: transparent;
+  border: 1px solid rgba(255, 59, 59, 0.3);
+  color: var(--priority-urgent);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.78rem;
+  transition: background var(--transition-fast);
+}
+
+.tagDeleteBtn:hover { background: rgba(255, 59, 59, 0.1); }
+
 .pathValidation {
   font-size: 0.75rem;
   padding: 4px 8px;

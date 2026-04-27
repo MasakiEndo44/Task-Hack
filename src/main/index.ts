@@ -211,6 +211,60 @@ app.whenReady().then(async () => {
     return suggestPriority(s.openAiApiKey ?? '', tasks)
   })
 
+  // C-1: タグ管理
+  const tagsFile = join(dataDir, 'tags.json')
+  ipcMain.handle('tags:load', async () => {
+    try {
+      const data = await fs.readFile(tagsFile, 'utf-8')
+      return JSON.parse(data)
+    } catch {
+      return []
+    }
+  })
+  ipcMain.handle('tags:save', async (_, tags) => {
+    await fs.mkdir(dataDir, { recursive: true })
+    await fs.writeFile(tagsFile, JSON.stringify(tags, null, 2), 'utf-8')
+  })
+
+  // Phase B: 週次レポートオーバーレイ
+  ipcMain.handle('sweep:getPendingReport', async () => {
+    const reportFile = join(dataDir, 'pending-sweep-report.json')
+    try {
+      const data = await fs.readFile(reportFile, 'utf-8')
+      await fs.unlink(reportFile).catch(() => {})
+      return JSON.parse(data)
+    } catch {
+      return null
+    }
+  })
+
+  // C-3: レポート履歴リスト
+  ipcMain.handle('reports:list', async () => {
+    const archiveDir = join(dataDir, 'archive')
+    try {
+      await fs.mkdir(archiveDir, { recursive: true })
+      const files = await fs.readdir(archiveDir)
+      const jsonFiles = files.filter(f => /^\d{4}-W\d{2}\.json$/.test(f)).sort().reverse().slice(0, 12)
+      const reports = await Promise.all(jsonFiles.map(async (file) => {
+        const weekLabel = file.replace('.json', '')
+        try {
+          const data = await fs.readFile(join(archiveDir, file), 'utf-8')
+          const tasks = JSON.parse(data) as Array<{ title: string }>
+          return {
+            weekLabel,
+            taskCount: tasks.length,
+            titles: tasks.slice(0, 3).map(t => t.title)
+          }
+        } catch {
+          return { weekLabel, taskCount: 0, titles: [] }
+        }
+      }))
+      return reports
+    } catch {
+      return []
+    }
+  })
+
   // Phase 4: スケジューラー起動
   const settings = await loadCurrentSettings()
   startScheduler(settings, loadCurrentSettings)
