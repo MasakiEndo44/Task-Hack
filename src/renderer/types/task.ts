@@ -94,5 +94,5 @@ export interface Task {
   tagIds?: string[]
 }
 
-/** タスク作成時の入力（idとcreatedAtは自動生成） */
-export type TaskInput = Omit<Task, 'id' | 'createdAt' | 'order'>
+/** タスク作成時の入力（idとcreatedAtは自動生成。idを明示すると連番IDとして使われる） */
+export type TaskInput = Omit<Task, 'id' | 'createdAt' | 'order'> & { id?: string }

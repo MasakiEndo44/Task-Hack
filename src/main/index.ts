@@ -11,7 +11,7 @@ import { DEFAULT_SETTINGS } from './types/settings'
 import { runSweep } from './services/sweepService'
 import { validateVaultPath } from './services/vaultService'
 import { loadAllProfile } from './services/profileService'
-import { loadSoul, initEcho, updateSoulStyle } from './services/soulService'
+import { loadSoul, initEcho, updateSoulStyle, loadUserContext, saveUserContext } from './services/soulService'
 import { startScheduler, stopScheduler, checkAndRunCatchup, checkAndRunRecurringTasks } from './services/scheduler'
 import { processRecurringTasks } from './services/recurrenceService'
 import { suggestPriority } from './services/priorityService'
@@ -191,6 +191,23 @@ app.whenReady().then(async () => {
   })
   ipcMain.handle('soul:updateStyle', async (_, content: string) => {
     return updateSoulStyle(content)
+  })
+
+  // C-2: ユーザーコンテキスト
+  ipcMain.handle('context:load', async () => {
+    return loadUserContext()
+  })
+  ipcMain.handle('context:save', async (_, content: string) => {
+    return saveUserContext(content)
+  })
+  ipcMain.handle('context:importFile', async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      title: 'コンテキストファイルを選択してください',
+      filters: [{ name: 'テキストファイル', extensions: ['md', 'txt'] }]
+    })
+    if (result.canceled || result.filePaths.length === 0) return null
+    return fs.readFile(result.filePaths[0], 'utf-8')
   })
 
   // Phase 5: 繰り返しタスクチェック

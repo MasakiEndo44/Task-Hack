@@ -8,6 +8,7 @@ import { loadProfileSection } from './profileService'
 const dataDir = () => join(app.getPath('home'), '.task-hack')
 const aiDir = () => join(dataDir(), 'ai')
 const soulPath = () => join(aiDir(), 'soul.md')
+const userContextPath = () => join(aiDir(), 'user_context.md')
 
 /** soul.mdを読み込む。存在しない場合はnullを返す */
 export async function loadSoul(): Promise<string | null> {
@@ -56,6 +57,22 @@ export async function updateSoulStyle(newStyleContent: string): Promise<void> {
   await saveSoul(updated)
 }
 
+/** user_context.mdを読み込む。存在しない場合はnullを返す */
+export async function loadUserContext(): Promise<string | null> {
+  try {
+    return await fs.readFile(userContextPath(), 'utf-8')
+  } catch (err: any) {
+    if (err.code === 'ENOENT') return null
+    throw err
+  }
+}
+
+/** user_context.mdを保存する */
+export async function saveUserContext(content: string): Promise<void> {
+  await fs.mkdir(aiDir(), { recursive: true })
+  await fs.writeFile(userContextPath(), content, 'utf-8')
+}
+
 export interface LayeredPromptOptions {
   /** Layer2で読み込むプロファイルセクション */
   profileSections?: ('identity' | 'patterns' | 'goals' | 'insights')[]
@@ -66,8 +83,9 @@ export interface LayeredPromptOptions {
 }
 
 /**
- * 4層構造のシステムプロンプトを構築する
+ * 5層構造のシステムプロンプトを構築する
  * Layer 1: soul.md全文（AI人格・行動不変条件）
+ * Layer 1.5: user_context.md（ユーザー自己記述・最優先コンテキスト）
  * Layer 2: user-profileの指定セクション（ユーザー特性）
  * Layer 3: タスクコンテキスト（CLEAREDタスクJSON等）
  * Layer 4: 具体的なリクエスト（今回の指示）
@@ -81,6 +99,12 @@ export async function buildLayeredPrompt(
 
   // Layer 1: Soul
   const soul = (await loadSoul()) ?? ''
+
+  // Layer 1.5: User Context (user-authored self-description)
+  const userContextRaw = await loadUserContext()
+  const userContext = userContextRaw
+    ? `## ユーザー自己記述コンテキスト（最優先）\n${userContextRaw}`
+    : ''
 
   // Layer 2: User Profile
   const profileParts: string[] = []
@@ -100,6 +124,6 @@ export async function buildLayeredPrompt(
     : ''
 
   // Layer 4: Request
-  const layers = [soul, profile, context, request].filter(Boolean)
+  const layers = [soul, userContext, profile, context, request].filter(Boolean)
   return layers.join(separator)
 }

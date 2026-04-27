@@ -28,6 +28,8 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
   const [sweepMessage, setSweepMessage] = useState('')
   const [connectionTest, setConnectionTest] = useState<{ ok: boolean; error?: string } | null>(null)
   const [isTestingConnection, setIsTestingConnection] = useState(false)
+  const [userContext, setUserContext] = useState('')
+  const [userContextSaved, setUserContextSaved] = useState(false)
   const [newTagName, setNewTagName] = useState('')
   const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0])
   const similarPairs = findSimilarTagPairs(tags)
@@ -48,6 +50,9 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
       window.api.loadSoul().then((soul: string | null) => {
         if (soul) setSoulContent(soul)
       })
+      window.api.loadUserContext?.().then((ctx: string | null) => {
+        setUserContext(ctx ?? '')
+      }).catch(() => {})
     }
   }, [isOpen])
 
@@ -103,6 +108,19 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
 
   const handleSaveSoulStyle = async () => {
     await window.api.updateSoulStyle(soulContent)
+  }
+
+  const handleSaveUserContext = async () => {
+    await window.api.saveUserContext?.(userContext)
+    setUserContextSaved(true)
+    setTimeout(() => setUserContextSaved(false), 2000)
+  }
+
+  const handleImportUserContext = async () => {
+    const content = await window.api.importUserContext?.()
+    if (content !== null && content !== undefined) {
+      setUserContext(content)
+    }
   }
 
   const handleManualSweep = async () => {
@@ -257,6 +275,26 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
                 <span className={styles.help}>Style Extensionsセクション（ユーザーカスタマイズ部分）が保存されます。</span>
               </div>
             )}
+
+            <div className={styles.section}>
+              <label>ユーザーコンテキスト (user_context.md)</label>
+              <textarea
+                value={userContext}
+                onChange={e => { setUserContext(e.target.value); setUserContextSaved(false) }}
+                className={styles.textarea}
+                rows={6}
+                placeholder={`例:\n- 私はソフトウェアエンジニアです\n- ADHDがあり、タスクの優先付けが苦手です\n- 朝は集中できますが、午後は疲れやすいです`}
+              />
+              <div className={styles.inputRow} style={{ justifyContent: 'flex-end', gap: 'var(--space-sm)' }}>
+                <button className={styles.iconButton} onClick={handleImportUserContext}>
+                  📄 ファイルから読み込み
+                </button>
+                <button className={styles.iconButton} onClick={handleSaveUserContext}>
+                  {userContextSaved ? '✓ 保存しました' : '保存'}
+                </button>
+              </div>
+              <span className={styles.help}>Echoが常に参照するあなた自身の文脈情報です。職業・特性・作業スタイルなどを自由に記述してください。</span>
+            </div>
 
             <div className={styles.section}>
               <label>週次スイープ</label>

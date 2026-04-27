@@ -48,6 +48,10 @@ const api = {
   saveTags: (tags: any[]) => ipcRenderer.invoke('tags:save', tags),
   // C-3: レポート履歴
   listReports: () => ipcRenderer.invoke('reports:list'),
+  // C-2: ユーザーコンテキスト
+  loadUserContext: () => ipcRenderer.invoke('context:load'),
+  saveUserContext: (content: string) => ipcRenderer.invoke('context:save', content),
+  importUserContext: () => ipcRenderer.invoke('context:importFile'),
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

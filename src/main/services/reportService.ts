@@ -108,8 +108,37 @@ export async function updateProfileFromTasks(
 
   const systemPrompt = await buildLayeredPrompt({
     profileSections: ['patterns', 'insights'],
-    request: `今週完了したタスクデータを分析して、patterns.mdとinsights.mdの更新内容を生成してください。
+    request: `今週完了したタスクデータを分析して、patterns.mdとinsights.mdを更新してください。
 
+## patterns.md の更新ルール
+- 既存の全レコードを保持すること（削除・上書き禁止）
+- 新データで既存パターンを補強し、証拠週を追記する
+- 3週以上同じ傾向が確認されたら「観察中」→「確認済」に昇格させる
+- 反証があれば「例外あり」として記録する
+- 以下のセクション構造を厳守すること:
+
+\`\`\`
+# 行動パターン分析
+
+最終更新: {YYYY-MM-DD}
+
+## 見積精度
+- [観察中|確認済|例外あり] 内容（観察週: W__, W__, ...）
+
+## よく扱うカテゴリ
+- カテゴリ名 XX%（観察週数: N週）
+
+## 作業ペース特性
+- [観察中|確認済|例外あり] 内容（観察週: W__, W__, ...）
+\`\`\`
+
+## insights.md の更新ルール
+- 今週分（${weekLabel}）のセクションを先頭に追記する
+- 過去の全 ### セクションをそのまま保持すること（削除禁止）
+- 今週の特記事項・異常値・新発見を3行以内で簡潔に記録する
+- 形式: \`### ${weekLabel}\n- 観察内容\`
+
+## 出力形式
 以下のJSON形式のみで返してください（他のテキストは含めないでください）:
 {"patterns": "（更新後のpatterns.mdの全文）", "insights": "（更新後のinsights.mdの全文）"}`
   })
