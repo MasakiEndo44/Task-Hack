@@ -5,8 +5,8 @@ import type { Task } from '../../renderer/types/task'
 import type { SweepStatus } from '../../renderer/types/sweep'
 import type { AppSettings } from '../types/settings'
 import { generateWeeklyReport } from './reportService'
-import { writeWeeklyReport, writeArchiveMd, writeLocalArchive, getWeekLabel, syncSoulToVault } from './vaultService'
-import { saveProfileSection } from './profileService'
+import { writeWeeklyReport, writeArchiveMd, writeLocalArchive, getWeekLabel, syncSoulToVault, syncContextToVault } from './vaultService'
+import { loadUserContext } from './contextService'
 import { loadSoul } from './soulService'
 
 function sendProgress(status: SweepStatus): void {
@@ -57,14 +57,12 @@ export async function runSweep(settings: AppSettings): Promise<void> {
     if (settings.obsidianVaultPath && reportResult) {
       await writeWeeklyReport(settings.obsidianVaultPath, weekLabel, reportResult.reportMd)
       await writeArchiveMd(settings.obsidianVaultPath, weekLabel, reportResult.archiveMd)
-      if (reportResult.profileUpdates.patterns) {
-        await saveProfileSection('patterns', reportResult.profileUpdates.patterns)
-      }
-      if (reportResult.profileUpdates.insights) {
-        await saveProfileSection('insights', reportResult.profileUpdates.insights)
-      }
+      
       const soulContent = await loadSoul()
       if (soulContent) await syncSoulToVault(settings.obsidianVaultPath, soulContent)
+      
+      const contextContent = await loadUserContext()
+      if (contextContent) await syncContextToVault(settings.obsidianVaultPath, contextContent)
     } else {
       await writeLocalArchive(dataDir, weekLabel, clearedTasks)
     }

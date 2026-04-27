@@ -29,8 +29,9 @@ const api = {
   // Phase 4: Vault
   validateVaultPath: (path: string) => ipcRenderer.invoke('vault:validate', path),
   selectVaultFolder: () => ipcRenderer.invoke('vault:selectFolder'),
-  // Phase 4: Profile
-  loadProfile: () => ipcRenderer.invoke('profile:load'),
+  // Phase 4: Context
+  loadUserContext: () => ipcRenderer.invoke('context:load'),
+  injectUserContext: (input: string) => ipcRenderer.invoke('context:inject', input),
   // Phase 4: Echo / Soul
   initEcho: (userName: string) => ipcRenderer.invoke('echo:init', userName),
   loadSoul: () => ipcRenderer.invoke('soul:load'),
