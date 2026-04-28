@@ -5,8 +5,8 @@ import type { Task } from '../../renderer/types/task'
 import type { SweepStatus } from '../../renderer/types/sweep'
 import type { AppSettings } from '../types/settings'
 import { generateWeeklyReport } from './reportService'
-import { writeWeeklyReport, writeArchiveMd, writeLocalArchive, getWeekLabel, syncSoulToVault, writeUserProfileSection } from './vaultService'
-import { saveProfileSection, loadProfileSection } from './profileService'
+import { writeWeeklyReport, writeArchiveMd, writeLocalArchive, getWeekLabel, syncSoulToVault, syncContextToVault } from './vaultService'
+import { loadUserContext } from './contextService'
 import { loadSoul } from './soulService'
 
 function sendProgress(status: SweepStatus): void {
@@ -54,31 +54,17 @@ export async function runSweep(settings: AppSettings): Promise<void> {
 
     sendProgress({ phase: 'archiving', message: 'フライトログをVaultに格納中...' })
 
-    // AI が生成したプロファイル更新をローカルに保存（Vault 有無に関わらず常に実行）
-    if (reportResult) {
-      if (reportResult.profileUpdates.patterns) {
-        await saveProfileSection('patterns', reportResult.profileUpdates.patterns)
-      }
-      if (reportResult.profileUpdates.insights) {
-        await saveProfileSection('insights', reportResult.profileUpdates.insights)
-      }
-    }
-
     if (settings.obsidianVaultPath && reportResult) {
       await writeWeeklyReport(settings.obsidianVaultPath, weekLabel, reportResult.reportMd)
       await writeArchiveMd(settings.obsidianVaultPath, weekLabel, reportResult.archiveMd)
+      
       const soulContent = await loadSoul()
       if (soulContent) await syncSoulToVault(settings.obsidianVaultPath, soulContent)
+      
+      const contextContent = await loadUserContext()
+      if (contextContent) await syncContextToVault(settings.obsidianVaultPath, contextContent)
     }
 
-    // profile 4セクションを Vault に同期（Vault 設定時のみ、アプリが master・Vault は閲覧コピー）
-    if (settings.obsidianVaultPath) {
-      const profileSections = ['identity', 'patterns', 'goals', 'insights'] as const
-      for (const section of profileSections) {
-        const content = await loadProfileSection(section)
-        if (content) await writeUserProfileSection(settings.obsidianVaultPath, section, content)
-      }
-    }
     // Vault 有無に関わらず常にローカル JSON を書く（履歴タブの reports:list が参照）
     await writeLocalArchive(dataDir, weekLabel, clearedTasks)
 

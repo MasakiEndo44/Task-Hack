@@ -10,8 +10,8 @@ import OpenAI from 'openai'
 import { DEFAULT_SETTINGS } from './types/settings'
 import { runSweep } from './services/sweepService'
 import { validateVaultPath } from './services/vaultService'
-import { loadAllProfile } from './services/profileService'
-import { loadSoul, initEcho, updateSoulStyle, loadUserContext, saveUserContext } from './services/soulService'
+import { loadUserContext, injectContext, initUserContextIfNeeded } from './services/contextService'
+import { loadSoul, initEcho, updateSoulStyle } from './services/soulService'
 import { startScheduler, stopScheduler, checkAndRunCatchup, checkAndRunRecurringTasks } from './services/scheduler'
 import { processRecurringTasks } from './services/recurrenceService'
 import { suggestPriority } from './services/priorityService'
@@ -33,9 +33,9 @@ function classifyOpenAIError(e: any): string {
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1400,
-    height: 900,
+    height: 1000,
     minWidth: 1024,
-    minHeight: 700,
+    minHeight: 800,
     show: false,
     autoHideMenuBar: true,
     backgroundColor: '#0a0e17',
@@ -177,13 +177,20 @@ app.whenReady().then(async () => {
     return result.canceled ? null : result.filePaths[0]
   })
 
-  // Phase 4: Profile
-  ipcMain.handle('profile:load', async () => {
-    return loadAllProfile()
+  // Phase 4: Context
+  ipcMain.handle('context:load', async () => {
+    return loadUserContext()
+  })
+
+  ipcMain.handle('context:inject', async (_, input: string) => {
+    const s = await loadCurrentSettings()
+    if (!s.openAiApiKey) throw new Error('APIキーが設定されていません')
+    return injectContext(s.openAiApiKey, input)
   })
 
   // Phase 4: Echo / Soul
   ipcMain.handle('echo:init', async (_, userName: string) => {
+    await initUserContextIfNeeded(userName)
     return initEcho(userName)
   })
   ipcMain.handle('soul:load', async () => {

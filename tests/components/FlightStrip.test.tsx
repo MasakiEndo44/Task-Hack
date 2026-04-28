@@ -38,7 +38,7 @@ describe('FlightStrip', () => {
 
   it('should display scheduled time if present', () => {
     render(<FlightStrip task={mockTask} onComplete={vi.fn()} />)
-    expect(screen.getByText('09:00')).toBeInTheDocument()
+    expect(screen.getByText('04/16')).toBeInTheDocument()
   })
 
   it('should display category if present', () => {

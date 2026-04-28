@@ -29,8 +29,9 @@ const api = {
   // Phase 4: Vault
   validateVaultPath: (path: string) => ipcRenderer.invoke('vault:validate', path),
   selectVaultFolder: () => ipcRenderer.invoke('vault:selectFolder'),
-  // Phase 4: Profile
-  loadProfile: () => ipcRenderer.invoke('profile:load'),
+  // Phase 4: Context
+  loadUserContext: () => ipcRenderer.invoke('context:load'),
+  injectUserContext: (input: string) => ipcRenderer.invoke('context:inject', input),
   // Phase 4: Echo / Soul
   initEcho: (userName: string) => ipcRenderer.invoke('echo:init', userName),
   loadSoul: () => ipcRenderer.invoke('soul:load'),
@@ -48,10 +49,6 @@ const api = {
   saveTags: (tags: any[]) => ipcRenderer.invoke('tags:save', tags),
   // C-3: レポート履歴
   listReports: () => ipcRenderer.invoke('reports:list'),
-  // C-2: ユーザーコンテキスト
-  loadUserContext: () => ipcRenderer.invoke('context:load'),
-  saveUserContext: (content: string) => ipcRenderer.invoke('context:save', content),
-  importUserContext: () => ipcRenderer.invoke('context:importFile'),
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

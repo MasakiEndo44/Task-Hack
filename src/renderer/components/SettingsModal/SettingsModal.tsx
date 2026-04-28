@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { StaffCreditsModal } from '../StaffCreditsModal/StaffCreditsModal'
 import styles from './SettingsModal.module.css'
 import type { AppTag } from '../../types/tag'
 import { MAX_TAG_NAME_LENGTH, MAX_TAGS, TAG_COLORS } from '../../types/tag'
@@ -28,8 +29,10 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
   const [sweepMessage, setSweepMessage] = useState('')
   const [connectionTest, setConnectionTest] = useState<{ ok: boolean; error?: string } | null>(null)
   const [isTestingConnection, setIsTestingConnection] = useState(false)
-  const [userContext, setUserContext] = useState('')
-  const [userContextSaved, setUserContextSaved] = useState(false)
+  const [contextInput, setContextInput] = useState('')
+  const [isInjecting, setIsInjecting] = useState(false)
+  const [injectionSummary, setInjectionSummary] = useState('')
+  const [showCredits, setShowCredits] = useState(false)
   const [newTagName, setNewTagName] = useState('')
   const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0])
   const similarPairs = findSimilarTagPairs(tags)
@@ -50,9 +53,6 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
       window.api.loadSoul().then((soul: string | null) => {
         if (soul) setSoulContent(soul)
       })
-      window.api.loadUserContext?.().then((ctx: string | null) => {
-        setUserContext(ctx ?? '')
-      }).catch(() => {})
     }
   }, [isOpen])
 
@@ -110,19 +110,6 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
     await window.api.updateSoulStyle(soulContent)
   }
 
-  const handleSaveUserContext = async () => {
-    await window.api.saveUserContext?.(userContext)
-    setUserContextSaved(true)
-    setTimeout(() => setUserContextSaved(false), 2000)
-  }
-
-  const handleImportUserContext = async () => {
-    const content = await window.api.importUserContext?.()
-    if (content !== null && content !== undefined) {
-      setUserContext(content)
-    }
-  }
-
   const handleManualSweep = async () => {
     setIsSweepRunning(true)
     setSweepMessage('スイープを開始しています...')
@@ -134,6 +121,34 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
       }
     })
     await window.api.runSweep()
+  }
+
+  const handleInjectContext = async () => {
+    if (!contextInput.trim()) return
+    setIsInjecting(true)
+    setInjectionSummary('')
+    try {
+      const result = await (window as any).api.injectUserContext(contextInput)
+      setInjectionSummary(result.summary)
+      setContextInput('')
+    } catch (e: any) {
+      setInjectionSummary(`エラー: ${e.message}`)
+    } finally {
+      setIsInjecting(false)
+    }
+  }
+
+  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string
+      if (text) {
+        setContextInput(prev => prev + (prev ? '\n' : '') + text)
+      }
+    }
+    reader.readAsText(file)
   }
 
   return (
@@ -236,6 +251,12 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
                 className={styles.input}
               />
             </div>
+
+            <div className={styles.creditsButtonContainer}>
+              <button className={styles.creditsButton} onClick={() => setShowCredits(true)}>
+                Staff Credits
+              </button>
+            </div>
           </div>
         )}
 
@@ -277,23 +298,38 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
             )}
 
             <div className={styles.section}>
-              <label>ユーザーコンテキスト (user_context.md)</label>
-              <textarea
-                value={userContext}
-                onChange={e => { setUserContext(e.target.value); setUserContextSaved(false) }}
-                className={styles.textarea}
-                rows={6}
-                placeholder={`例:\n- 私はソフトウェアエンジニアです\n- ADHDがあり、タスクの優先付けが苦手です\n- 朝は集中できますが、午後は疲れやすいです`}
-              />
-              <div className={styles.inputRow} style={{ justifyContent: 'flex-end', gap: 'var(--space-sm)' }}>
-                <button className={styles.iconButton} onClick={handleImportUserContext}>
-                  📄 ファイルから読み込み
-                </button>
-                <button className={styles.iconButton} onClick={handleSaveUserContext}>
-                  {userContextSaved ? '✓ 保存しました' : '保存'}
+              <label>ユーザーコンテキスト注入</label>
+              <div className={styles.inputRow}>
+                <textarea
+                  value={contextInput}
+                  onChange={e => setContextInput(e.target.value)}
+                  placeholder="追加したいプロファイル情報や最近の出来事を入力..."
+                  className={styles.textarea}
+                  rows={3}
+                />
+              </div>
+              <div className={styles.inputRow} style={{ justifyContent: 'space-between', marginTop: '8px' }}>
+                <div>
+                  <input type="file" id="context-file" accept=".txt,.md" style={{ display: 'none' }} onChange={handleFileImport} />
+                  <button className={styles.iconButton} onClick={() => document.getElementById('context-file')?.click()}>
+                    📁 ファイル読込
+                  </button>
+                </div>
+                <button
+                  className={styles.iconButton}
+                  onClick={handleInjectContext}
+                  disabled={!contextInput.trim() || isInjecting || !apiKey}
+                >
+                  {isInjecting ? '注入中...' : 'コンテキストを注入'}
                 </button>
               </div>
-              <span className={styles.help}>Echoが常に参照するあなた自身の文脈情報です。職業・特性・作業スタイルなどを自由に記述してください。</span>
+              {injectionSummary && (
+                <div className={styles.contextSummary}>
+                  <h4>📋 更新サマリー</h4>
+                  <pre>{injectionSummary}</pre>
+                </div>
+              )}
+              <span className={styles.help}>入力された情報はAIが分析し、user-context.mdの適切なセクションにマージされます。</span>
             </div>
 
             <div className={styles.section}>
@@ -402,6 +438,8 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
           <button className={styles.saveButton} onClick={handleSave}>保存</button>
         </div>
       </div>
+
+      <StaffCreditsModal isOpen={showCredits} onClose={() => setShowCredits(false)} />
     </>
   )
 }
