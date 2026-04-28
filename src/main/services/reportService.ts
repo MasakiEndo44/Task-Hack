@@ -2,14 +2,11 @@ import OpenAI from 'openai'
 import type { Task } from '../../renderer/types/task'
 import { buildLayeredPrompt } from './soulService'
 import { getWeekLabel } from './vaultService'
+import { injectContext } from './contextService'
 
 export interface WeeklyReportResult {
   reportMd: string
   archiveMd: string
-  profileUpdates: {
-    patterns: string
-    insights: string
-  }
 }
 
 export function buildArchiveMd(clearedTasks: Task[], weekLabel: string): string {
@@ -55,7 +52,6 @@ export async function generateWeeklyReport(
   )
 
   const systemPrompt = await buildLayeredPrompt({
-    profileSections: ['identity', 'patterns', 'goals'],
     request: `週次レポートを生成してください。
 
 対象週: ${weekLabel}
@@ -94,44 +90,21 @@ generatedAt: ${new Date().toISOString()}
 
   const reportMd = response.choices[0]?.message?.content ?? ''
   const archiveMd = buildArchiveMd(clearedTasks, weekLabel)
-  const profileUpdates = await updateProfileFromTasks(apiKey, clearedTasks, weekLabel)
+  await updateContextFromTasks(apiKey, clearedTasks, weekLabel)
 
-  return { reportMd, archiveMd, profileUpdates }
+  return { reportMd, archiveMd }
 }
 
-export async function updateProfileFromTasks(
+export async function updateContextFromTasks(
   apiKey: string,
   clearedTasks: Task[],
   weekLabel: string
-): Promise<{ patterns: string; insights: string }> {
-  const openai = new OpenAI({ apiKey })
+): Promise<void> {
+  const input = `以下の完了タスクから、ユーザーの「Patterns」と「Insights」に記録すべき傾向や発見を抽出し、user-context.mdを更新してください。
 
-  const systemPrompt = await buildLayeredPrompt({
-    profileSections: ['patterns', 'insights'],
-    request: `今週完了したタスクデータを分析して、patterns.mdとinsights.mdの更新内容を生成してください。
+対象週: ${weekLabel}
+完了タスク:
+${JSON.stringify(clearedTasks.map(t => ({ title: t.title, completedAt: t.completedAt, estimatedTime: t.estimatedTime })))}`
 
-以下のJSON形式のみで返してください（他のテキストは含めないでください）:
-{"patterns": "（更新後のpatterns.mdの全文）", "insights": "（更新後のinsights.mdの全文）"}`
-  })
-
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: `${weekLabel}の完了タスク:\n${JSON.stringify(clearedTasks.map(t => ({ title: t.title, completedAt: t.completedAt, estimatedTime: t.estimatedTime })))}` }
-    ],
-    temperature: 0.5,
-    max_tokens: 1500,
-    response_format: { type: 'json_object' },
-  })
-
-  try {
-    const parsed = JSON.parse(response.choices[0]?.message?.content ?? '{}')
-    return {
-      patterns: parsed.patterns ?? '',
-      insights: parsed.insights ?? '',
-    }
-  } catch {
-    return { patterns: '', insights: '' }
-  }
+  await injectContext(apiKey, input)
 }

@@ -5,8 +5,8 @@ import type { Task } from '../../renderer/types/task'
 import type { SweepStatus } from '../../renderer/types/sweep'
 import type { AppSettings } from '../types/settings'
 import { generateWeeklyReport } from './reportService'
-import { writeWeeklyReport, writeArchiveMd, writeLocalArchive, getWeekLabel, syncSoulToVault } from './vaultService'
-import { saveProfileSection } from './profileService'
+import { writeWeeklyReport, writeArchiveMd, writeLocalArchive, getWeekLabel, syncSoulToVault, syncContextToVault } from './vaultService'
+import { loadUserContext } from './contextService'
 import { loadSoul } from './soulService'
 
 function sendProgress(status: SweepStatus): void {
@@ -57,17 +57,16 @@ export async function runSweep(settings: AppSettings): Promise<void> {
     if (settings.obsidianVaultPath && reportResult) {
       await writeWeeklyReport(settings.obsidianVaultPath, weekLabel, reportResult.reportMd)
       await writeArchiveMd(settings.obsidianVaultPath, weekLabel, reportResult.archiveMd)
-      if (reportResult.profileUpdates.patterns) {
-        await saveProfileSection('patterns', reportResult.profileUpdates.patterns)
-      }
-      if (reportResult.profileUpdates.insights) {
-        await saveProfileSection('insights', reportResult.profileUpdates.insights)
-      }
+      
       const soulContent = await loadSoul()
       if (soulContent) await syncSoulToVault(settings.obsidianVaultPath, soulContent)
-    } else {
-      await writeLocalArchive(dataDir, weekLabel, clearedTasks)
+      
+      const contextContent = await loadUserContext()
+      if (contextContent) await syncContextToVault(settings.obsidianVaultPath, contextContent)
     }
+
+    // Vault 有無に関わらず常にローカル JSON を書く（履歴タブの reports:list が参照）
+    await writeLocalArchive(dataDir, weekLabel, clearedTasks)
 
     sendProgress({ phase: 'cleaning', message: '格納庫を整理中... CLEAREDタスクを削除します' })
 
@@ -79,14 +78,6 @@ export async function runSweep(settings: AppSettings): Promise<void> {
       const settingsData = await fs.readFile(settingsFile, 'utf-8').then(JSON.parse).catch(() => ({}))
       await fs.writeFile(settingsFile, JSON.stringify({ ...settingsData, lastSweepAt: new Date().toISOString() }, null, 2), 'utf-8')
     } catch { /* settings更新失敗は致命的ではない */ }
-
-    const pendingReport = {
-      weekLabel,
-      taskCount: clearedTasks.length,
-      reportMd: reportResult?.reportMd ?? '',
-    }
-    const pendingReportFile = join(dataDir, 'pending-sweep-report.json')
-    await fs.writeFile(pendingReportFile, JSON.stringify(pendingReport, null, 2), 'utf-8').catch(() => {})
 
     sendProgress({
       phase: 'done',

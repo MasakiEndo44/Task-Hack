@@ -3,7 +3,7 @@ import { join } from 'path'
 import { app } from 'electron'
 import { SOUL_TEMPLATE } from '../templates/soulTemplate'
 import type { Task } from '../../renderer/types/task'
-import { loadProfileSection } from './profileService'
+import { loadUserContext } from './contextService'
 
 const dataDir = () => join(app.getPath('home'), '.task-hack')
 const aiDir = () => join(dataDir(), 'ai')
@@ -57,8 +57,6 @@ export async function updateSoulStyle(newStyleContent: string): Promise<void> {
 }
 
 export interface LayeredPromptOptions {
-  /** Layer2で読み込むプロファイルセクション */
-  profileSections?: ('identity' | 'patterns' | 'goals' | 'insights')[]
   /** Layer3タスクコンテキスト */
   taskContext?: Task[]
   /** Layer4の具体的リクエスト文字列 */
@@ -68,31 +66,23 @@ export interface LayeredPromptOptions {
 /**
  * 4層構造のシステムプロンプトを構築する
  * Layer 1: soul.md全文（AI人格・行動不変条件）
- * Layer 2: user-profileの指定セクション（ユーザー特性）
+ * Layer 2: user-context.md 全文（ユーザー特性）
  * Layer 3: タスクコンテキスト（CLEAREDタスクJSON等）
  * Layer 4: 具体的なリクエスト（今回の指示）
  */
 export async function buildLayeredPrompt(
   options: LayeredPromptOptions,
-  loadProfileSectionFn: (section: string) => Promise<string> = loadProfileSection
+  loadContextFn: () => Promise<string | null> = loadUserContext
 ): Promise<string> {
-  const { profileSections = [], taskContext = [], request } = options
+  const { taskContext = [], request } = options
   const separator = '\n\n---\n\n'
 
   // Layer 1: Soul
   const soul = (await loadSoul()) ?? ''
 
-  // Layer 2: User Profile
-  const profileParts: string[] = []
-  if (loadProfileSectionFn && profileSections.length > 0) {
-    for (const section of profileSections) {
-      const content = await loadProfileSectionFn(section)
-      if (content) profileParts.push(`### ${section}.md\n${content}`)
-    }
-  }
-  const profile = profileParts.length > 0
-    ? `## ユーザープロファイル\n${profileParts.join('\n\n')}`
-    : ''
+  // Layer 2: User Context
+  const contextContent = loadContextFn ? await loadContextFn() : null
+  const profile = contextContent ? `## ユーザープロファイル (user-context.md)\n${contextContent}` : ''
 
   // Layer 3: Task Context
   const context = taskContext.length > 0

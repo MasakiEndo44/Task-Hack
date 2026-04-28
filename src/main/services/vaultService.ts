@@ -78,6 +78,12 @@ export async function syncSoulToVault(vaultPath: string, soulContent: string): P
   await fs.writeFile(join(dir, 'soul.md'), soulContent, 'utf-8')
 }
 
+export async function syncContextToVault(vaultPath: string, contextContent: string): Promise<void> {
+  const dir = join(resolveVaultPath(vaultPath), 'ai')
+  await fs.mkdir(dir, { recursive: true })
+  await fs.writeFile(join(dir, 'user-context.md'), contextContent, 'utf-8')
+}
+
 export async function writeLocalArchive(
   dataDir: string,
   weekLabel: string,

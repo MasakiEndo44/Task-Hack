@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { StaffCreditsModal } from '../StaffCreditsModal/StaffCreditsModal'
 import styles from './SettingsModal.module.css'
 import type { AppTag } from '../../types/tag'
 import { MAX_TAG_NAME_LENGTH, MAX_TAGS, TAG_COLORS } from '../../types/tag'
@@ -28,6 +29,10 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
   const [sweepMessage, setSweepMessage] = useState('')
   const [connectionTest, setConnectionTest] = useState<{ ok: boolean; error?: string } | null>(null)
   const [isTestingConnection, setIsTestingConnection] = useState(false)
+  const [contextInput, setContextInput] = useState('')
+  const [isInjecting, setIsInjecting] = useState(false)
+  const [injectionSummary, setInjectionSummary] = useState('')
+  const [showCredits, setShowCredits] = useState(false)
   const [newTagName, setNewTagName] = useState('')
   const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0])
   const similarPairs = findSimilarTagPairs(tags)
@@ -116,6 +121,34 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
       }
     })
     await window.api.runSweep()
+  }
+
+  const handleInjectContext = async () => {
+    if (!contextInput.trim()) return
+    setIsInjecting(true)
+    setInjectionSummary('')
+    try {
+      const result = await (window as any).api.injectUserContext(contextInput)
+      setInjectionSummary(result.summary)
+      setContextInput('')
+    } catch (e: any) {
+      setInjectionSummary(`エラー: ${e.message}`)
+    } finally {
+      setIsInjecting(false)
+    }
+  }
+
+  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string
+      if (text) {
+        setContextInput(prev => prev + (prev ? '\n' : '') + text)
+      }
+    }
+    reader.readAsText(file)
   }
 
   return (
@@ -218,6 +251,12 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
                 className={styles.input}
               />
             </div>
+
+            <div className={styles.creditsButtonContainer}>
+              <button className={styles.creditsButton} onClick={() => setShowCredits(true)}>
+                Staff Credits
+              </button>
+            </div>
           </div>
         )}
 
@@ -257,6 +296,41 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
                 <span className={styles.help}>Style Extensionsセクション（ユーザーカスタマイズ部分）が保存されます。</span>
               </div>
             )}
+
+            <div className={styles.section}>
+              <label>ユーザーコンテキスト注入</label>
+              <div className={styles.inputRow}>
+                <textarea
+                  value={contextInput}
+                  onChange={e => setContextInput(e.target.value)}
+                  placeholder="追加したいプロファイル情報や最近の出来事を入力..."
+                  className={styles.textarea}
+                  rows={3}
+                />
+              </div>
+              <div className={styles.inputRow} style={{ justifyContent: 'space-between', marginTop: '8px' }}>
+                <div>
+                  <input type="file" id="context-file" accept=".txt,.md" style={{ display: 'none' }} onChange={handleFileImport} />
+                  <button className={styles.iconButton} onClick={() => document.getElementById('context-file')?.click()}>
+                    📁 ファイル読込
+                  </button>
+                </div>
+                <button
+                  className={styles.iconButton}
+                  onClick={handleInjectContext}
+                  disabled={!contextInput.trim() || isInjecting || !apiKey}
+                >
+                  {isInjecting ? '注入中...' : 'コンテキストを注入'}
+                </button>
+              </div>
+              {injectionSummary && (
+                <div className={styles.contextSummary}>
+                  <h4>📋 更新サマリー</h4>
+                  <pre>{injectionSummary}</pre>
+                </div>
+              )}
+              <span className={styles.help}>入力された情報はAIが分析し、user-context.mdの適切なセクションにマージされます。</span>
+            </div>
 
             <div className={styles.section}>
               <label>週次スイープ</label>
@@ -364,6 +438,8 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
           <button className={styles.saveButton} onClick={handleSave}>保存</button>
         </div>
       </div>
+
+      <StaffCreditsModal isOpen={showCredits} onClose={() => setShowCredits(false)} />
     </>
   )
 }
