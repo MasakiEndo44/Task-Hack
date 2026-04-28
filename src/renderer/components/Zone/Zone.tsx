@@ -25,6 +25,7 @@ interface ZoneProps {
   defaultTimer?: number
   onTimerEvent?: (event: 'start' | 'wrapup' | 'complete', taskTitle: string, remainingMin?: number) => void
   onSuggestPriority?: () => void
+  onAddEmptyTask?: () => void
   blockedTaskIds?: Set<string>
   filteredOutTaskIds?: Set<string>
   onAddEmptyTask?: () => void
@@ -72,7 +73,7 @@ function SortableFlightStrip({
   )
 }
 
-export function Zone({ zone, title, subtitle, icon, tasks, maxTasks, onComplete, onUndo, onClickTask, defaultTimer = 25, onTimerEvent, onSuggestPriority, blockedTaskIds, filteredOutTaskIds, onAddEmptyTask }: ZoneProps) {
+export function Zone({ zone, title, subtitle, icon, tasks, maxTasks, onComplete, onUndo, onClickTask, defaultTimer = 25, onTimerEvent, onSuggestPriority, onAddEmptyTask, blockedTaskIds, filteredOutTaskIds }: ZoneProps) {
   const { setNodeRef, isOver } = useDroppable({ id: zone })
 
   const timerCallbacks: TimerCallbacks | undefined = onTimerEvent ? {

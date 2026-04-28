@@ -86,14 +86,14 @@ describe('buildLayeredPrompt', () => {
     expect(prompt).toContain('test request')
   })
 
-  it('loadContextFnが提供された場合、ユーザーコンテキストを読み込む', async () => {
+  it('loadContextFnが提供された場合、コンテキストを読み込む', async () => {
     mockFs.readFile.mockResolvedValueOnce('# Soul')
-    const mockLoader = vi.fn().mockResolvedValue('## パターン内容')
+    const mockLoader = vi.fn().mockResolvedValue('## ユーザーコンテキスト内容')
     const prompt = await buildLayeredPrompt(
       { request: 'req' },
       mockLoader
     )
     expect(mockLoader).toHaveBeenCalled()
-    expect(prompt).toContain('パターン内容')
+    expect(prompt).toContain('ユーザーコンテキスト内容')
   })
 })

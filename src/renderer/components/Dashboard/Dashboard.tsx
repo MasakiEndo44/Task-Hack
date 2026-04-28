@@ -127,9 +127,9 @@ export function Dashboard({ tasksByZone, allTasks = [], onComplete, onUndoComple
               onClickTask={onClickTask}
               defaultTimer={defaultTimer}
               onTimerEvent={onTimerEvent}
+              onAddEmptyTask={onAddEmptyTask ? () => onAddEmptyTask('ACTIVE') : undefined}
               blockedTaskIds={blockedTaskIds}
               filteredOutTaskIds={filteredOutTaskIds}
-              onAddEmptyTask={onAddEmptyTask ? () => onAddEmptyTask('ACTIVE') : undefined}
             />
           </div>
           <div className={styles.nextZone}>
@@ -142,9 +142,9 @@ export function Dashboard({ tasksByZone, allTasks = [], onComplete, onUndoComple
               maxTasks={ZONE_LIMITS.NEXT_ACTION}
               onComplete={onComplete}
               onClickTask={onClickTask}
+              onAddEmptyTask={onAddEmptyTask ? () => onAddEmptyTask('NEXT_ACTION') : undefined}
               blockedTaskIds={blockedTaskIds}
               filteredOutTaskIds={filteredOutTaskIds}
-              onAddEmptyTask={onAddEmptyTask ? () => onAddEmptyTask('NEXT_ACTION') : undefined}
             />
           </div>
         </div>
@@ -161,9 +161,9 @@ export function Dashboard({ tasksByZone, allTasks = [], onComplete, onUndoComple
             onComplete={onComplete}
             onClickTask={onClickTask}
             onSuggestPriority={onSuggestPriority}
+            onAddEmptyTask={onAddEmptyTask ? () => onAddEmptyTask('HOLDING') : undefined}
             blockedTaskIds={blockedTaskIds}
             filteredOutTaskIds={filteredOutTaskIds}
-            onAddEmptyTask={onAddEmptyTask ? () => onAddEmptyTask('HOLDING') : undefined}
           />
         </div>
 

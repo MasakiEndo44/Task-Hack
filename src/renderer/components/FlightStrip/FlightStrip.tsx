@@ -16,18 +16,7 @@ interface FlightStripProps {
   isFilteredOut?: boolean
 }
 
-function formatScheduledTime(iso?: string): string | null {
-  if (!iso) return null
-  const date = new Date(iso)
-  return date.toLocaleTimeString('ja-JP', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  })
-}
-
 export function FlightStrip({ task, onComplete, onUndo, onClick, isDragging = false, isBlocked = false, isFilteredOut = false }: FlightStripProps) {
-  const scheduledTime = formatScheduledTime(task.scheduledStart)
   const scheduledDate = formatScheduledDate(task.scheduledStart)
   const isUrgent = task.priority === 'URG'
   const isCleared = task.zone === 'CLEARED'
@@ -44,9 +33,6 @@ export function FlightStrip({ task, onComplete, onUndo, onClick, isDragging = fa
         <span className={styles.flightId}>{task.id}</span>
         {scheduledDate && (
           <span className={styles.time}>{scheduledDate}</span>
-        )}
-        {scheduledTime && (
-          <span className={styles.time}>{scheduledTime}</span>
         )}
         {needsClarification && (
           <span className={styles.clarificationBadge} title="Echoが質問を持っています">◈</span>

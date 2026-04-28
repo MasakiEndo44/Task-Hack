@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTaskReducer } from './hooks/useTaskReducer'
-import type { Task, ZoneType } from './types/task'
+import type { Task, ZoneType, TaskInput } from './types/task'
 import type { AppTag } from './types/tag'
 import type { SweepStatus } from './types/sweep'
 import { Clock } from './components/Clock/Clock'
@@ -120,15 +120,19 @@ function App(): React.JSX.Element {
 
   useEffect(() => {
     if (window.api?.onSweepProgress) {
-      window.api.onSweepProgress((status) => {
+      window.api.onSweepProgress(async (status) => {
         setSweepStatus(status)
         if (status.phase === 'done') {
+          if (window.api?.loadTasks) {
+            const fresh = await window.api.loadTasks().catch(() => null)
+            if (fresh) dispatch({ type: 'INIT_TASKS', payload: { tasks: fresh } })
+          }
           setTimeout(() => setSweepStatus(null), 4000)
         }
       })
     }
     return () => { window.api?.offSweepListeners?.() }
-  }, [])
+  }, [dispatch])
 
   const handleComplete = useCallback(async (taskId: string) => {
     dispatch({ type: 'COMPLETE_TASK', payload: { taskId } })
@@ -161,6 +165,28 @@ function App(): React.JSX.Element {
     dispatch({ type: 'DELETE_TASK', payload: { taskId } })
     setSelectedTaskId(null)
   }, [dispatch])
+
+  const handleAddTask = useCallback(async (payload: TaskInput): Promise<string | undefined> => {
+    if (window.api?.loadSettings && window.api?.saveSettings) {
+      try {
+        const settings = await window.api.loadSettings()
+        const next = (settings.lastFlightId ?? 0) + 1
+        const id = `FS${String(next).padStart(4, '0')}`
+        await window.api.saveSettings({ ...settings, lastFlightId: next })
+        dispatch({ type: 'ADD_TASK', payload: { ...payload, id } })
+        return id
+      } catch { /* フォールバック: ランダムIDで生成 */ }
+    }
+    dispatch({ type: 'ADD_TASK', payload })
+    return undefined
+  }, [dispatch])
+
+  const handleAddEmptyTask = useCallback(async (zone: ZoneType) => {
+    const id = await handleAddTask({ title: '', zone, priority: 'NRM' })
+    if (id) {
+      setSelectedTaskId(id)
+    }
+  }, [handleAddTask])
 
   const handleRegisterInjectMessage = useCallback((fn: (text: string) => void) => {
     injectEchoMessageRef.current = fn
@@ -259,7 +285,7 @@ function App(): React.JSX.Element {
         <ChatDrawer
           isOpen={isChatOpen}
           onClose={() => setIsChatOpen(false)}
-          onAddTask={(payload) => dispatch({ type: 'ADD_TASK', payload })}
+          onAddTask={handleAddTask}
           tasks={tasks}
           onRegisterInjectMessage={handleRegisterInjectMessage}
           onUpdateTask={handleUpdateTask}
@@ -280,7 +306,7 @@ function App(): React.JSX.Element {
             onTimerEvent={handleTimerEvent}
             onSuggestPriority={handleSuggestPriority}
             onAddEmptyTask={handleAddEmptyTask}
-          tags={tags}
+            tags={tags}
           />
         </main>
       </div>

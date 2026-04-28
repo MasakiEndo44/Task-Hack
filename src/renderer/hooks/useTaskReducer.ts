@@ -22,7 +22,7 @@ function taskReducer(state: Task[], action: TaskAction): Task[] {
       const existingIds = state.map(t => t.id)
       const newTask: Task = {
         ...action.payload,
-        id: action.payload.id || generateFlightId(existingIds),
+        id: action.payload.id ?? generateFlightId(existingIds),
         createdAt: new Date().toISOString(),
         order: state.filter(t => t.zone === action.payload.zone).length
       }

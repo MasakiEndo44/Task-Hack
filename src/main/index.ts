@@ -206,6 +206,23 @@ app.whenReady().then(async () => {
     return updateSoulStyle(content)
   })
 
+  // C-2: ユーザーコンテキスト
+  ipcMain.handle('context:load', async () => {
+    return loadUserContext()
+  })
+  ipcMain.handle('context:save', async (_, content: string) => {
+    return saveUserContext(content)
+  })
+  ipcMain.handle('context:importFile', async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      title: 'コンテキストファイルを選択してください',
+      filters: [{ name: 'テキストファイル', extensions: ['md', 'txt'] }]
+    })
+    if (result.canceled || result.filePaths.length === 0) return null
+    return fs.readFile(result.filePaths[0], 'utf-8')
+  })
+
   // Phase 5: 繰り返しタスクチェック
   ipcMain.handle('recurrence:check', async (_, tasks) => {
     return processRecurringTasks(tasks)

@@ -31,7 +31,11 @@ export function ReportHistory() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    window.api.listReports?.().then(data => {
+    if (!window.api?.listReports) {
+      setIsLoading(false)
+      return
+    }
+    window.api.listReports().then(data => {
       setReports(data ?? [])
       setIsLoading(false)
     }).catch(() => setIsLoading(false))

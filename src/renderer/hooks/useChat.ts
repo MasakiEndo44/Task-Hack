@@ -40,7 +40,7 @@ export function parseAssistantMarkers(content: string) {
   return { displayText, quickReplies, taskUpdates, done }
 }
 
-function buildSystemPrompt(tasks: Task[], clarificationTask?: Task | null, userContext?: string): string {
+function buildSystemPrompt(tasks: Task[], clarificationTask?: Task | null, profileSummary?: string, userContext?: string): string {
   const now = new Date()
   const dateStr = now.toLocaleDateString('ja-JP', {
     year: 'numeric',
@@ -155,7 +155,11 @@ function buildSystemPrompt(tasks: Task[], clarificationTask?: Task | null, userC
 ` : ''
 
   const userContextSection = userContext
-    ? `\n\n## ユーザー自己記述コンテキスト（最優先）\n${userContext}\n※これはユーザー自身が記述した特性情報です。すべての応答に反映してください。`
+    ? `\n\n## ユーザー自己記述コンテキスト（最優先）\n${userContext}\n（これはユーザー自身が記述した文脈情報です。すべての応答に反映してください）`
+    : ''
+
+  const profileSection = profileSummary
+    ? `\n\n## あなたが知っているユーザーの特性\n${profileSummary}\n（この情報を踏まえて、タスク提案・励まし・優先度判断を個別化してください）`
     : ''
 
   return `あなたはTask-Hack AIです。ADHDを持つユーザーの仕事上のタスク管理を支援するAI秘書です。
@@ -167,25 +171,34 @@ function buildSystemPrompt(tasks: Task[], clarificationTask?: Task | null, userC
 ${taskGenerationSection}
 ## 現在の状況
 - 日時: ${dateStr} ${timeStr}
-${boardLines}${dependencySection}${clarificationSection}${userContextSection}`
+${boardLines}${dependencySection}${clarificationSection}${userContextSection}${profileSection}`
 }
 
 export function useChat(tasks: Task[], onUpdateTask?: (taskId: string, updates: Partial<Task>) => void) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [clarificationTask, setClarificationTask] = useState<Task | null>(null)
+  const [profileSummary, setProfileSummary] = useState('')
   const [userContext, setUserContext] = useState('')
   const clarificationTaskRef = useRef<Task | null>(null)
   const clarificationStartIndexRef = useRef<number>(-1)
   const clarificationAnswerCountRef = useRef<number>(0)
 
-  // ユーザーコンテキストをロード
+  // ユーザープロファイルをロード（goals + patterns を Echo のコンテキストに注入）
   useEffect(() => {
-    if (window.api?.loadUserContext) {
-      window.api.loadUserContext()
-        .then(ctx => { if (ctx) setUserContext(ctx.slice(0, 1200)) })
-        .catch(() => {})
-    }
+    window.api.loadProfile?.()
+      .then(p => {
+        const parts = [p.goals, p.patterns].filter(Boolean)
+        setProfileSummary(parts.join('\n\n---\n\n').slice(0, 800))
+      })
+      .catch(() => {})
+  }, [])
+
+  // ユーザーコンテキストをロード（user_context.md）
+  useEffect(() => {
+    window.api.loadUserContext?.()
+      .then(ctx => { if (ctx) setUserContext(ctx.slice(0, 1200)) })
+      .catch(() => {})
   }, [])
 
   // clean up listeners when unmounting
@@ -239,7 +252,7 @@ export function useChat(tasks: Task[], onUpdateTask?: (taskId: string, updates: 
         return
       }
 
-      const systemPrompt = buildSystemPrompt(tasks, clarificationTaskRef.current, userContext)
+      const systemPrompt = buildSystemPrompt(tasks, clarificationTaskRef.current, profileSummary, userContext)
       const payload = buildApiPayload(currentHistory)
 
       // add empty assistant message to update progressively
@@ -321,7 +334,7 @@ export function useChat(tasks: Task[], onUpdateTask?: (taskId: string, updates: 
       setIsLoading(false)
       window.api.offChatListeners()
     }
-  }, [tasks])
+  }, [tasks, profileSummary, userContext])
 
   const injectMessage = useCallback((text: string) => {
     setMessages(prev => [...prev, { role: 'assistant', content: text }])

@@ -7,6 +7,7 @@ export interface AppSettings {
   sweepSchedule?: string
   lastSweepAt?: string | null
   userName?: string
+  lastFlightId?: number
 }
 
 export const DEFAULT_SETTINGS: Pick<AppSettings, 'timerDefault' | 'sweepSchedule'> = {

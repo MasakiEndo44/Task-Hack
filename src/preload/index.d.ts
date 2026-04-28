@@ -38,6 +38,10 @@ export interface IElectronAPI {
   saveTags: (tags: import('../renderer/types/tag').AppTag[]) => Promise<void>
   // C-3: レポート履歴
   listReports: () => Promise<Array<{ weekLabel: string; taskCount: number; titles: string[] }>>
+  // C-2: ユーザーコンテキスト
+  loadUserContext: () => Promise<string | null>
+  saveUserContext: (content: string) => Promise<void>
+  importUserContext: () => Promise<string | null>
 }
 
 declare global {
