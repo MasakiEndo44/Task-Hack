@@ -94,5 +94,5 @@ export interface Task {
   tagIds?: string[]
 }
 
-/** タスク作成時の入力（idとcreatedAtは自動生成） */
-export type TaskInput = Omit<Task, 'id' | 'createdAt' | 'order'>
+/** タスク作成時の入力（createdAtとorderは自動生成） */
+export type TaskInput = Omit<Task, 'id' | 'createdAt' | 'order'> & Partial<Pick<Task, 'id'>>

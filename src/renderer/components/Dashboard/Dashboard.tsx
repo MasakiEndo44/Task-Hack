@@ -26,10 +26,11 @@ interface DashboardProps {
   defaultTimer: number
   onTimerEvent?: (event: 'start' | 'wrapup' | 'complete', taskTitle: string, remainingMin?: number) => void
   onSuggestPriority?: () => void
+  onAddEmptyTask?: (zone: ZoneType) => void
   tags?: AppTag[]
 }
 
-export function Dashboard({ tasksByZone, allTasks = [], onComplete, onUndoComplete, onMoveTask, onClickTask, defaultTimer, onTimerEvent, onSuggestPriority, tags = [] }: DashboardProps) {
+export function Dashboard({ tasksByZone, allTasks = [], onComplete, onUndoComplete, onMoveTask, onClickTask, defaultTimer, onTimerEvent, onSuggestPriority, onAddEmptyTask, tags = [] }: DashboardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null)
 
@@ -128,6 +129,7 @@ export function Dashboard({ tasksByZone, allTasks = [], onComplete, onUndoComple
               onTimerEvent={onTimerEvent}
               blockedTaskIds={blockedTaskIds}
               filteredOutTaskIds={filteredOutTaskIds}
+              onAddEmptyTask={onAddEmptyTask ? () => onAddEmptyTask('ACTIVE') : undefined}
             />
           </div>
           <div className={styles.nextZone}>
@@ -142,6 +144,7 @@ export function Dashboard({ tasksByZone, allTasks = [], onComplete, onUndoComple
               onClickTask={onClickTask}
               blockedTaskIds={blockedTaskIds}
               filteredOutTaskIds={filteredOutTaskIds}
+              onAddEmptyTask={onAddEmptyTask ? () => onAddEmptyTask('NEXT_ACTION') : undefined}
             />
           </div>
         </div>
@@ -160,6 +163,7 @@ export function Dashboard({ tasksByZone, allTasks = [], onComplete, onUndoComple
             onSuggestPriority={onSuggestPriority}
             blockedTaskIds={blockedTaskIds}
             filteredOutTaskIds={filteredOutTaskIds}
+            onAddEmptyTask={onAddEmptyTask ? () => onAddEmptyTask('HOLDING') : undefined}
           />
         </div>
 

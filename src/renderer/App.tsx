@@ -11,6 +11,7 @@ import { Drawer } from './components/Drawer/Drawer'
 import { TaskDetail } from './components/TaskDetail/TaskDetail'
 import { SettingsModal } from './components/SettingsModal/SettingsModal'
 import { ChatDrawer } from './components/ChatDrawer/ChatDrawer'
+import { generateFlightId } from './utils/flightId'
 import styles from './App.module.css'
 
 // デモ用サンプルタスク（開発時の動作確認用）
@@ -165,6 +166,13 @@ function App(): React.JSX.Element {
     injectEchoMessageRef.current = fn
   }, [])
 
+  const handleAddEmptyTask = useCallback((zone: ZoneType) => {
+    const existingIds = tasks.map(t => t.id)
+    const id = generateFlightId(existingIds)
+    dispatch({ type: 'ADD_TASK', payload: { id, title: '', zone, priority: 'NRM' } })
+    setSelectedTaskId(id)
+  }, [dispatch, tasks])
+
   const handleRegisterStartClarification = useCallback((fn: (task: Task) => void) => {
     startClarificationRef.current = fn
   }, [])
@@ -271,6 +279,7 @@ function App(): React.JSX.Element {
             defaultTimer={defaultTimer}
             onTimerEvent={handleTimerEvent}
             onSuggestPriority={handleSuggestPriority}
+            onAddEmptyTask={handleAddEmptyTask}
           tags={tags}
           />
         </main>
