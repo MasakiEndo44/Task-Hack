@@ -9,7 +9,7 @@ import { is } from '@electron-toolkit/utils'
 import OpenAI from 'openai'
 import { DEFAULT_SETTINGS } from './types/settings'
 import { runSweep } from './services/sweepService'
-import { validateVaultPath } from './services/vaultService'
+import { validateVaultPath, syncContextToVault } from './services/vaultService'
 import { loadUserContext, injectContext, initUserContextIfNeeded } from './services/contextService'
 import { loadSoul, initEcho, updateSoulStyle } from './services/soulService'
 import { startScheduler, stopScheduler, checkAndRunCatchup, checkAndRunRecurringTasks } from './services/scheduler'
@@ -177,7 +177,7 @@ app.whenReady().then(async () => {
     return result.canceled ? null : result.filePaths[0]
   })
 
-  // Phase 4: Context
+  // Phase 4: Context (FB-004: user-context.md 統合管理)
   ipcMain.handle('context:load', async () => {
     return loadUserContext()
   })
@@ -185,7 +185,13 @@ app.whenReady().then(async () => {
   ipcMain.handle('context:inject', async (_, input: string) => {
     const s = await loadCurrentSettings()
     if (!s.openAiApiKey) throw new Error('APIキーが設定されていません')
-    return injectContext(s.openAiApiKey, input)
+    const result = await injectContext(s.openAiApiKey, input)
+    // 注入成功後、Vault同期（即時反映）
+    if (s.obsidianVaultPath) {
+      const ctx = await loadUserContext()
+      if (ctx) await syncContextToVault(s.obsidianVaultPath, ctx)
+    }
+    return result
   })
 
   // Phase 4: Echo / Soul

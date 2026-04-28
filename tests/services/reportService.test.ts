@@ -24,8 +24,9 @@ vi.mock('openai', () => ({
 }))
 
 vi.mock('../../src/main/services/contextService', () => ({
-  injectContext: vi.fn().mockResolvedValue({ summary: 'ok' }),
-  loadUserContext: vi.fn().mockResolvedValue('mock user context')
+  injectContext: vi.fn().mockResolvedValue({ summary: 'mocked' }),
+  loadUserContext: vi.fn().mockResolvedValue('# mock context'),
+  initUserContextIfNeeded: vi.fn().mockResolvedValue(undefined),
 }))
 
 import { buildArchiveMd, generateWeeklyReport } from '../../src/main/services/reportService'

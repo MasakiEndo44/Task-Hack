@@ -1,6 +1,11 @@
 import type { Task } from '../../types/task'
 import styles from './FlightStrip.module.css'
 
+function formatScheduledDate(iso?: string): string | null {
+  if (!iso) return null
+  return new Date(iso).toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit' })
+}
+
 interface FlightStripProps {
   task: Task
   onComplete: (taskId: string) => void
@@ -9,11 +14,6 @@ interface FlightStripProps {
   isDragging?: boolean
   isBlocked?: boolean
   isFilteredOut?: boolean
-}
-
-function formatScheduledDate(iso?: string): string | null {
-  if (!iso) return null
-  return new Date(iso).toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit' })
 }
 
 export function FlightStrip({ task, onComplete, onUndo, onClick, isDragging = false, isBlocked = false, isFilteredOut = false }: FlightStripProps) {

@@ -28,6 +28,7 @@ interface ZoneProps {
   onAddEmptyTask?: () => void
   blockedTaskIds?: Set<string>
   filteredOutTaskIds?: Set<string>
+  onAddEmptyTask?: () => void
 }
 
 function SortableFlightStrip({
