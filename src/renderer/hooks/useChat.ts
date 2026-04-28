@@ -40,7 +40,7 @@ export function parseAssistantMarkers(content: string) {
   return { displayText, quickReplies, taskUpdates, done }
 }
 
-function buildSystemPrompt(tasks: Task[], clarificationTask?: Task | null): string {
+function buildSystemPrompt(tasks: Task[], clarificationTask?: Task | null, userContext?: string): string {
   const now = new Date()
   const dateStr = now.toLocaleDateString('ja-JP', {
     year: 'numeric',
@@ -107,6 +107,10 @@ function buildSystemPrompt(tasks: Task[], clarificationTask?: Task | null): stri
 - 口調はEchoらしく自然に（「〜ですね ✈」など）
 - タスク提案のJSONブロックはこのモード中は出力しない` : ''
 
+  const userContextSection = userContext
+    ? `\n\n## ユーザー自己記述コンテキスト（最優先）\n${userContext}\n※これはユーザー自身が記述した特性情報です。すべての応答に反映してください。`
+    : ''
+
   return `あなたはTask-Hack AIです。ADHDを持つユーザーの仕事上のタスク管理を支援するAI秘書です。
 
 【口調・スタイル】
@@ -161,16 +165,26 @@ function buildSystemPrompt(tasks: Task[], clarificationTask?: Task | null): stri
 
 ## 現在の状況
 - 日時: ${dateStr} ${timeStr}
-${boardLines}${dependencySection}${clarificationSection}`
+${boardLines}${dependencySection}${clarificationSection}${userContextSection}`
 }
 
 export function useChat(tasks: Task[], onUpdateTask?: (taskId: string, updates: Partial<Task>) => void) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [clarificationTask, setClarificationTask] = useState<Task | null>(null)
+  const [userContext, setUserContext] = useState('')
   const clarificationTaskRef = useRef<Task | null>(null)
   const clarificationStartIndexRef = useRef<number>(-1)
   const clarificationAnswerCountRef = useRef<number>(0)
+
+  // ユーザーコンテキストをロード
+  useEffect(() => {
+    if (window.api?.loadUserContext) {
+      window.api.loadUserContext()
+        .then(ctx => { if (ctx) setUserContext(ctx.slice(0, 1200)) })
+        .catch(() => {})
+    }
+  }, [])
 
   // clean up listeners when unmounting
   useEffect(() => {
@@ -223,7 +237,7 @@ export function useChat(tasks: Task[], onUpdateTask?: (taskId: string, updates: 
         return
       }
 
-      const systemPrompt = buildSystemPrompt(tasks, clarificationTaskRef.current)
+      const systemPrompt = buildSystemPrompt(tasks, clarificationTaskRef.current, userContext)
       const payload = buildApiPayload(currentHistory)
 
       // add empty assistant message to update progressively

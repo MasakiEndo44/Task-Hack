@@ -69,6 +69,17 @@
   flex-shrink: 0;
 }
 
+.clarificationBadge {
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--zone-next);
+  border: 1px solid var(--zone-next);
+  border-radius: 3px;
+  padding: 1px 5px;
+  opacity: 0.85;
+  margin-left: var(--space-sm);
+}
+
 .closeButton {
   background: transparent;
   border: none;

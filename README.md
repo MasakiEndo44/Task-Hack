@@ -87,8 +87,8 @@ npm run build:win
 
 * **[Phase 1] MVP Core**: ATC型ダッシュボード、フライトストリップUI、D&D操作（✅ 実装済）
 * **[Phase 2] Data & Timer**: ローカルJSON保存、タイマー機能、詳細画面UI、ユーザ設定（✅ 実装済）
-* **[Phase 3] AI Chat**: AIチャットUI、自然言語からのタスク自動分解・生成
-* **[Phase 4] AI Growth**: Obsidian連携、週次AIスイープ、ユーザープロファイルの自動更新
+* **[Phase 3] AI Chat**: AIチャットUI、自然言語からのタスク自動分解・生成（✅ 実装済）
+* **[Phase 4] AI Growth**: Obsidian連携、週次AIスイープ、ユーザープロファイルの自動更新（✅ 実装済）
 
 ## 📜 ライセンス
 

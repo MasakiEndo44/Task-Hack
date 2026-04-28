@@ -1,6 +1,11 @@
 import type { Task } from '../../types/task'
 import styles from './FlightStrip.module.css'
 
+function formatScheduledDate(iso?: string): string | null {
+  if (!iso) return null
+  return new Date(iso).toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit' })
+}
+
 interface FlightStripProps {
   task: Task
   onComplete: (taskId: string) => void
@@ -23,6 +28,7 @@ function formatScheduledTime(iso?: string): string | null {
 
 export function FlightStrip({ task, onComplete, onUndo, onClick, isDragging = false, isBlocked = false, isFilteredOut = false }: FlightStripProps) {
   const scheduledTime = formatScheduledTime(task.scheduledStart)
+  const scheduledDate = formatScheduledDate(task.scheduledStart)
   const isUrgent = task.priority === 'URG'
   const isCleared = task.zone === 'CLEARED'
   const needsClarification = !task.scheduledStart && !task.notes && task.zone !== 'CLEARED'
@@ -36,6 +42,9 @@ export function FlightStrip({ task, onComplete, onUndo, onClick, isDragging = fa
       {/* 上段: フライトID + 時刻 + 優先度バッジ + 依存ブロックインジケーター */}
       <div className={styles.topRow}>
         <span className={styles.flightId}>{task.id}</span>
+        {scheduledDate && (
+          <span className={styles.time}>{scheduledDate}</span>
+        )}
         {scheduledTime && (
           <span className={styles.time}>{scheduledTime}</span>
         )}

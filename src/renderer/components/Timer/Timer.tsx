@@ -15,12 +15,16 @@ function formatTime(seconds: number) {
 }
 
 export function Timer({ initialMinutes = 25, taskTitle = '', callbacks }: TimerProps) {
-  const { state, remainingTime, progress, start, pause, reset } = useTimer(initialMinutes, callbacks, taskTitle)
+  const { state, elapsedTime, totalSeconds, progress, start, pause, reset } = useTimer(initialMinutes, callbacks, taskTitle)
 
   return (
     <div className={`${styles.timer} ${styles[state]}`}>
       <div className={styles.display}>
-        <span className={styles.time}>{formatTime(remainingTime)}</span>
+        <span className={styles.time}>
+          {formatTime(elapsedTime)}
+          <span className={styles.timeSeparator}> / </span>
+          {formatTime(totalSeconds)}
+        </span>
         <div className={styles.controls}>
           {state === 'idle' || state === 'paused' ? (
             <button onClick={start} className={styles.button} aria-label="スタート">
