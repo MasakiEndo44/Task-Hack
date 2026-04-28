@@ -13,6 +13,8 @@ export interface TimerCallbacks {
 interface UseTimerResult {
   state: TimerState
   remainingTime: number
+  elapsedTime: number
+  totalSeconds: number
   progress: number
   start: () => void
   pause: () => void
@@ -140,7 +142,8 @@ export function useTimer(
     setRemainingTime(seconds)
   }, [])
 
-  const progress = totalSeconds > 0 ? (totalSeconds - remainingTime) / totalSeconds : 0
+  const elapsedTime = totalSeconds - remainingTime
+  const progress = totalSeconds > 0 ? elapsedTime / totalSeconds : 0
 
-  return { state, remainingTime, progress, start, pause, reset }
+  return { state, remainingTime, elapsedTime, totalSeconds, progress, start, pause, reset }
 }

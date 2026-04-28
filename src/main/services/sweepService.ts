@@ -63,9 +63,10 @@ export async function runSweep(settings: AppSettings): Promise<void> {
       
       const contextContent = await loadUserContext()
       if (contextContent) await syncContextToVault(settings.obsidianVaultPath, contextContent)
-    } else {
-      await writeLocalArchive(dataDir, weekLabel, clearedTasks)
     }
+
+    // Vault 有無に関わらず常にローカル JSON を書く（履歴タブの reports:list が参照）
+    await writeLocalArchive(dataDir, weekLabel, clearedTasks)
 
     sendProgress({ phase: 'cleaning', message: '格納庫を整理中... CLEAREDタスクを削除します' })
 

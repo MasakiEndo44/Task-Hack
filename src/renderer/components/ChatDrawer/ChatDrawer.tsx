@@ -45,7 +45,7 @@ export interface ChatDrawerProps {
 }
 
 export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onAddTask, tasks, onRegisterInjectMessage, onUpdateTask, onRegisterStartClarification }) => {
-  const { messages, sendMessage, isLoading, injectMessage, startClarification } = useChat(tasks, onUpdateTask)
+  const { messages, sendMessage, isLoading, injectMessage, startClarification, clarificationTask } = useChat(tasks, onUpdateTask)
   const [input, setInput] = useState('')
   const [isComposing, setIsComposing] = useState(false)
   const [attachedImage, setAttachedImage] = useState<string | null>(null)
@@ -163,6 +163,11 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({ isOpen, onClose, onAddTa
           <div className={styles.title}>
             <div className={styles.statusIndicator} />
             Echo AI
+            {clarificationTask && (
+              <span className={styles.clarificationBadge} title={`「${clarificationTask.title}」の詳細確認中`}>
+                詳細確認中
+              </span>
+            )}
           </div>
           <button className={styles.closeButton} onClick={onClose} aria-label="チャットを閉じる">
             ✕

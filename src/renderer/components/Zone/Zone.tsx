@@ -25,6 +25,7 @@ interface ZoneProps {
   defaultTimer?: number
   onTimerEvent?: (event: 'start' | 'wrapup' | 'complete', taskTitle: string, remainingMin?: number) => void
   onSuggestPriority?: () => void
+  onAddEmptyTask?: () => void
   blockedTaskIds?: Set<string>
   filteredOutTaskIds?: Set<string>
 }
@@ -71,7 +72,7 @@ function SortableFlightStrip({
   )
 }
 
-export function Zone({ zone, title, subtitle, icon, tasks, maxTasks, onComplete, onUndo, onClickTask, defaultTimer = 25, onTimerEvent, onSuggestPriority, blockedTaskIds, filteredOutTaskIds }: ZoneProps) {
+export function Zone({ zone, title, subtitle, icon, tasks, maxTasks, onComplete, onUndo, onClickTask, defaultTimer = 25, onTimerEvent, onSuggestPriority, onAddEmptyTask, blockedTaskIds, filteredOutTaskIds }: ZoneProps) {
   const { setNodeRef, isOver } = useDroppable({ id: zone })
 
   const timerCallbacks: TimerCallbacks | undefined = onTimerEvent ? {
@@ -107,6 +108,16 @@ export function Zone({ zone, title, subtitle, icon, tasks, maxTasks, onComplete,
               title="Echoに優先順位を提案してもらう"
             >
               ◈ Echo
+            </button>
+          )}
+          {onAddEmptyTask && zone !== 'CLEARED' && (
+            <button
+              className={styles.addEmptyTaskBtn}
+              onClick={onAddEmptyTask}
+              disabled={isFull}
+              title={isFull ? 'ゾーンが満杯です' : '空のタスクを追加'}
+            >
+              ＋
             </button>
           )}
         </div>

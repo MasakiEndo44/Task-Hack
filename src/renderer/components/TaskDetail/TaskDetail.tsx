@@ -73,7 +73,7 @@ interface TaskDetailProps {
 export function TaskDetail({ task, allTasks = [], tags = [], onUpdate, onDelete, onTagsChange, onStartClarification }: TaskDetailProps) {
   const [estimatedTime, setEstimatedTime] = useState(task.estimatedTime || 25)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [isEditingTitle, setIsEditingTitle] = useState(!task.title)
   const [titleDraft, setTitleDraft] = useState(task.title)
   const [notes, setNotes] = useState(task.notes || '')
   const [scheduledStartDate, setScheduledStartDate] = useState(task.scheduledStart ? task.scheduledStart.split('T')[0] : '')
@@ -87,7 +87,7 @@ export function TaskDetail({ task, allTasks = [], tags = [], onUpdate, onDelete,
   // taskが切り替わったら初期値をリセット
   useEffect(() => {
     setShowDeleteConfirm(false)
-    setIsEditingTitle(false)
+    setIsEditingTitle(!task.title)
     setTitleDraft(task.title)
     setEstimatedTime(task.estimatedTime || 25)
     setNotes(task.notes || '')

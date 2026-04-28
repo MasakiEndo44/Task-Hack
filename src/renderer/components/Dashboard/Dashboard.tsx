@@ -26,10 +26,11 @@ interface DashboardProps {
   defaultTimer: number
   onTimerEvent?: (event: 'start' | 'wrapup' | 'complete', taskTitle: string, remainingMin?: number) => void
   onSuggestPriority?: () => void
+  onAddEmptyTask?: (zone: ZoneType) => void
   tags?: AppTag[]
 }
 
-export function Dashboard({ tasksByZone, allTasks = [], onComplete, onUndoComplete, onMoveTask, onClickTask, defaultTimer, onTimerEvent, onSuggestPriority, tags = [] }: DashboardProps) {
+export function Dashboard({ tasksByZone, allTasks = [], onComplete, onUndoComplete, onMoveTask, onClickTask, defaultTimer, onTimerEvent, onSuggestPriority, onAddEmptyTask, tags = [] }: DashboardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null)
 
@@ -126,6 +127,7 @@ export function Dashboard({ tasksByZone, allTasks = [], onComplete, onUndoComple
               onClickTask={onClickTask}
               defaultTimer={defaultTimer}
               onTimerEvent={onTimerEvent}
+              onAddEmptyTask={onAddEmptyTask ? () => onAddEmptyTask('ACTIVE') : undefined}
               blockedTaskIds={blockedTaskIds}
               filteredOutTaskIds={filteredOutTaskIds}
             />
@@ -140,6 +142,7 @@ export function Dashboard({ tasksByZone, allTasks = [], onComplete, onUndoComple
               maxTasks={ZONE_LIMITS.NEXT_ACTION}
               onComplete={onComplete}
               onClickTask={onClickTask}
+              onAddEmptyTask={onAddEmptyTask ? () => onAddEmptyTask('NEXT_ACTION') : undefined}
               blockedTaskIds={blockedTaskIds}
               filteredOutTaskIds={filteredOutTaskIds}
             />
@@ -158,6 +161,7 @@ export function Dashboard({ tasksByZone, allTasks = [], onComplete, onUndoComple
             onComplete={onComplete}
             onClickTask={onClickTask}
             onSuggestPriority={onSuggestPriority}
+            onAddEmptyTask={onAddEmptyTask ? () => onAddEmptyTask('HOLDING') : undefined}
             blockedTaskIds={blockedTaskIds}
             filteredOutTaskIds={filteredOutTaskIds}
           />

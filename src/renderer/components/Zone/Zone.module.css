@@ -116,6 +116,30 @@
   background: rgba(89, 161, 238, 0.2);
 }
 
+.addEmptyTaskBtn {
+  background: transparent;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 1px 6px;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+  line-height: 1.4;
+}
+
+.addEmptyTaskBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--text-muted);
+  color: var(--text-secondary);
+}
+
+.addEmptyTaskBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 .empty {
   display: flex;
   align-items: center;

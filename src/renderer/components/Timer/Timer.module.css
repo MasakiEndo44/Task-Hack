@@ -47,6 +47,13 @@
   letter-spacing: 0.05em;
 }
 
+.timeSeparator {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  letter-spacing: 0;
+}
+
 .controls {
   display: flex;
   gap: var(--space-xs);
