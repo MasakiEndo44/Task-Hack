@@ -97,27 +97,17 @@ function buildSystemPrompt(tasks: Task[], clarificationTask?: Task | null, userC
 <!--TU:{"notes":"場所: 会議室B"}-->
 <!--DONE:false-->
 
-### 最終ターン（3問目回答後 or「あとで考える」選択後）
+### 最終ターン（必要な情報が揃った場合 or「あとで考える」選択後）
 確認を締める一言 + 以下のマーカー:
 <!--QR:[]-->
-<!--TU:{"notes":"[全回答を統合したメモ]"}-->
+<!--TU:{"notes":"[全回答を統合したメモ]","subtasks":[{"title":"手順1"},{"title":"手順2"}]}-->
 <!--DONE:true-->
 
 ### その他
 - 口調はEchoらしく自然に（「〜ですね ✈」など）
-- タスク提案のJSONブロックはこのモード中は出力しない` : ''
+- タスク提案のJSONブロック(\`\`\`json)は絶対に出力しないこと。必ず <!--TU:...--> マーカーで既存タスクを更新すること。` : ''
 
-  const userContextSection = userContext
-    ? `\n\n## ユーザー自己記述コンテキスト（最優先）\n${userContext}\n※これはユーザー自身が記述した特性情報です。すべての応答に反映してください。`
-    : ''
-
-  return `あなたはTask-Hack AIです。ADHDを持つユーザーの仕事上のタスク管理を支援するAI秘書です。
-
-【口調・スタイル】
-- 丁寧語だが、親しみやすく簡潔に話す
-- 返答は短く、添える質問・確認は一つだけにする
-- ユーザーが愚痴や相談を投げてきたら、まず受け止めてから内容を整理する
-
+  const taskGenerationSection = !clarificationTask ? `
 【タスク提案の判断基準】
 - ユーザーのメッセージに期限・作業内容が明示されている → 即座に全タスクを提案する（質問不要）
 - 画像が添付されている場合 → 画像の内容を読み取り、確認なしに即タスク提案する
@@ -162,7 +152,19 @@ function buildSystemPrompt(tasks: Task[], clarificationTask?: Task | null, userC
   ]
 }
 \`\`\`
+` : ''
 
+  const userContextSection = userContext
+    ? `\n\n## ユーザー自己記述コンテキスト（最優先）\n${userContext}\n※これはユーザー自身が記述した特性情報です。すべての応答に反映してください。`
+    : ''
+
+  return `あなたはTask-Hack AIです。ADHDを持つユーザーの仕事上のタスク管理を支援するAI秘書です。
+
+【口調・スタイル】
+- 丁寧語だが、親しみやすく簡潔に話す
+- 返答は短く、添える質問・確認は一つだけにする
+- ユーザーが愚痴や相談を投げてきたら、まず受け止めてから内容を整理する
+${taskGenerationSection}
 ## 現在の状況
 - 日時: ${dateStr} ${timeStr}
 ${boardLines}${dependencySection}${clarificationSection}${userContextSection}`
