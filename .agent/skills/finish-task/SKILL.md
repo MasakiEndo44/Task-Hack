@@ -133,19 +133,13 @@ git branch -m claude/dreamy-napier-4f83ed ai/add-empty-task-button
 
 ```powershell
 git push origin <branch-name>
+gh pr create --title "<コミットメッセージと同じタイトル>" --body-file .github/pull_request_template.md
 ```
 
-PR 作成の案内:
-
-```
-GitHub で PR を作成してください:
-URL: https://github.com/MasakiEndo44/Task-Hack/compare/<branch-name>
-
-PR タイトル例: feat(dashboard): add empty task creation button
-
-PR 本文には PR テンプレート（.github/pull_request_template.md）が
-自動挿入されます。セルフレビューチェックリストを必ず確認してください。
-```
+- PR タイトルは通常、直前のコミットメッセージと同じ（例: `feat(dashboard): add empty task creation button`）にします。
+- `--body-file` を指定することで、PR テンプレートが自動的に適用されます。
+- `gh` CLI が未インストールの環境や、認証が済んでいない場合は、フォールバックとして以下の URL から手動で作成するよう案内してください:
+  `https://github.com/MasakiEndo44/Task-Hack/compare/<branch-name>`
 
 ---
 
@@ -159,10 +153,10 @@ PR 本文には PR テンプレート（.github/pull_request_template.md）が
 品質ゲート:
   ✅ TypeScript 型チェック
   ✅ テスト全件パス
+  ✅ PR 作成完了 (gh cli)
 
 次のステップ:
-- GitHub で PR を作成し、CI が通ることを確認
-- CI（typecheck + test + build）が通れば自動マージ
+- GitHub 上で CI（typecheck + test + build）が通ることを確認し、自動マージまたは Squash merge してください。
 - マージ後にブランチを削除:
     git checkout main
     git pull origin main
