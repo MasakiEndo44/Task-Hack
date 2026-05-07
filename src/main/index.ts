@@ -10,7 +10,7 @@ import OpenAI from 'openai'
 import { DEFAULT_SETTINGS } from './types/settings'
 import { runSweep } from './services/sweepService'
 import { validateVaultPath, syncContextToVault } from './services/vaultService'
-import { loadUserContext, injectContext, initUserContextIfNeeded } from './services/contextService'
+import { loadUserContext, saveUserContext, injectContext, initUserContextIfNeeded } from './services/contextService'
 import { loadSoul, initEcho, updateSoulStyle } from './services/soulService'
 import { startScheduler, stopScheduler, checkAndRunCatchup, checkAndRunRecurringTasks } from './services/scheduler'
 import { processRecurringTasks } from './services/recurrenceService'
@@ -206,10 +206,7 @@ app.whenReady().then(async () => {
     return updateSoulStyle(content)
   })
 
-  // C-2: ユーザーコンテキスト
-  ipcMain.handle('context:load', async () => {
-    return loadUserContext()
-  })
+  // C-2: ユーザーコンテキスト（context:load は Phase 4 セクションで登録済み）
   ipcMain.handle('context:save', async (_, content: string) => {
     return saveUserContext(content)
   })

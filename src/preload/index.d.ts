@@ -5,7 +5,7 @@ import { SweepStatus } from '../renderer/types/sweep'
 export interface IElectronAPI {
   loadTasks: () => Promise<Task[]>
   saveTasks: (tasks: Task[]) => Promise<void>
-  loadSettings: () => Promise<{ openAiApiKey?: string; timerDefault?: number; obsidianVaultPath?: string; sweepSchedule?: string; userName?: string }>
+  loadSettings: () => Promise<{ openAiApiKey?: string; timerDefault?: number; obsidianVaultPath?: string; sweepSchedule?: string; userName?: string; lastFlightId?: number }>
   saveSettings: (settings: any) => Promise<void>
   startChatStream: (messages: any[], systemPrompt: string, apiKey: string) => Promise<void>
   onChatChunk: (cb: (text: string) => void) => void

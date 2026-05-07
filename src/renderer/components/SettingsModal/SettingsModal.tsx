@@ -34,7 +34,7 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
   const [injectionSummary, setInjectionSummary] = useState('')
   const [showCredits, setShowCredits] = useState(false)
   const [newTagName, setNewTagName] = useState('')
-  const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0])
+  const [newTagColor, setNewTagColor] = useState<string>(TAG_COLORS[0])
   const similarPairs = findSimilarTagPairs(tags)
 
   useEffect(() => {

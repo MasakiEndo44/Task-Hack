@@ -4,7 +4,7 @@ import { app, BrowserWindow } from 'electron'
 import type { Task } from '../../renderer/types/task'
 import type { SweepStatus } from '../../renderer/types/sweep'
 import type { AppSettings } from '../types/settings'
-import { generateWeeklyReport } from './reportService'
+import { generateWeeklyReport, WeeklyReportResult } from './reportService'
 import { writeWeeklyReport, writeArchiveMd, writeLocalArchive, getWeekLabel, syncSoulToVault, syncContextToVault } from './vaultService'
 import { loadUserContext } from './contextService'
 import { loadSoul } from './soulService'
@@ -47,7 +47,7 @@ export async function runSweep(settings: AppSettings): Promise<void> {
   try {
     sendProgress({ phase: 'generating', message: 'Echoが週次レポートを生成中... しばらくお待ちください' })
 
-    let reportResult = null
+    let reportResult: WeeklyReportResult | null = null
     if (settings.openAiApiKey) {
       reportResult = await generateWeeklyReport(settings.openAiApiKey, clearedTasks, weekLabel)
     }
