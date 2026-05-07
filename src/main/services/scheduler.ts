@@ -1,4 +1,4 @@
-import cron from 'node-cron'
+import cron, { ScheduledTask } from 'node-cron'
 import fs from 'fs/promises'
 import { join } from 'path'
 import { app } from 'electron'
@@ -7,7 +7,7 @@ import { runSweep } from './sweepService'
 import { processRecurringTasks } from './recurrenceService'
 import type { Task } from '../../renderer/types/task'
 
-let scheduledTask: cron.ScheduledTask | null = null
+let scheduledTask: ScheduledTask | null = null
 
 export function startScheduler(
   settings: AppSettings,
