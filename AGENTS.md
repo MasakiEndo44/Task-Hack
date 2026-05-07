@@ -150,14 +150,30 @@ describe('Component', () => {
 ## 開発ワークフロー
 
 1. **計画**: `docs/superpowers/plans/` に実装計画書を作成
-2. **TDD**: テスト → 実装 → リファクタリングの Red-Green-Refactor サイクル
-3. **コミット**: タスク単位でこまめにコミット。プレフィックス規約:
+2. **ブランチ作成**: `main` から `<type>/<短い説明>` 形式でブランチを切る（詳細は [ブランチ戦略](docs/BRANCHING_STRATEGY.md)）
+3. **TDD**: テスト → 実装 → リファクタリングの Red-Green-Refactor サイクル
+4. **コミット**: `<type>(<scope>): <説明>` 形式でこまめにコミット
    - `feat:` 新機能
    - `fix:` バグ修正
    - `chore:` ビルド・設定変更
    - `docs:` ドキュメント
    - `refactor:` リファクタリング
-4. **検証**: `npm test` で全テストが通ることを確認してからコミット
+   - `test:` テスト追加・修正
+   - scope 例: `main`, `preload`, `dashboard`, `chat`, `timer`, `timeline`, `settings`, `sweep`, `context`, `dnd`, `deps`
+5. **検証**: `npm test` と `npm run typecheck` で全テスト・型チェックが通ることを確認
+6. **PR作成 → CI パス → オートマージ**: Squash merge で main にマージ
+
+### IPC チャンネル追加時の必須チェック
+
+IPC チャンネルを追加・変更する際は、**必ず以下の 3 ファイルを同時に更新**すること:
+
+| ファイル | 役割 |
+|---------|------|
+| `src/main/index.ts` | `ipcMain.handle('channel:name', ...)` |
+| `src/preload/index.ts` | `ipcRenderer.invoke('channel:name', ...)` |
+| `src/renderer/` 内の呼び出し元 | `window.api.methodName(...)` |
+
+> ⚠️ マージコンフリクト解消後は、ハンドラーやコールバックの**重複宣言がないことを必ず確認**する。
 
 ---
 
@@ -176,3 +192,4 @@ describe('Component', () => {
 
 - [システム要件定義書](docs/output/task-hack-system-requirements.md) — 7原則、機能要件(F1-F7)、非機能要件
 - [F1 実装計画書](docs/superpowers/plans/2026-04-16-f1-atc-dashboard.md) — タスク分解、TDD ステップ
+- [ブランチ戦略](docs/BRANCHING_STRATEGY.md) — ブランチ命名規約、PR運用、コミット規約
