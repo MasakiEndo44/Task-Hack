@@ -16,7 +16,13 @@ function sendProgress(status: SweepStatus): void {
   }
 }
 
-export async function runSweep(settings: AppSettings): Promise<void> {
+export interface SweepResult {
+  reportMd: string
+  weekLabel: string
+  taskCount: number
+}
+
+export async function runSweep(settings: AppSettings): Promise<SweepResult | null> {
   const dataDir = join(app.getPath('home'), '.task-hack')
   const tasksFile = join(dataDir, 'tasks.json')
   const tasksBak = join(dataDir, 'tasks.json.bak')
@@ -30,13 +36,13 @@ export async function runSweep(settings: AppSettings): Promise<void> {
     allTasks = JSON.parse(data)
   } catch {
     sendProgress({ phase: 'done', message: 'タスクデータがありません', taskCount: 0 })
-    return
+    return null
   }
 
   const clearedTasks = allTasks.filter(t => t.zone === 'CLEARED')
   if (clearedTasks.length === 0) {
     sendProgress({ phase: 'done', message: 'CLEAREDフライトがありません。スイープをスキップします', taskCount: 0 })
-    return
+    return null
   }
 
   const weekLabel = getWeekLabel()
@@ -87,11 +93,18 @@ export async function runSweep(settings: AppSettings): Promise<void> {
       weekLabel,
     })
 
+    return {
+      reportMd: reportResult?.reportMd ?? '',
+      weekLabel,
+      taskCount: clearedTasks.length,
+    }
+
   } catch (err: any) {
     sendProgress({
       phase: 'error',
       message: 'スイープ処理でエラーが発生しました。タスクデータは保護されています',
       error: err.message
     })
+    return null
   }
 }

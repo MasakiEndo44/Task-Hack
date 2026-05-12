@@ -42,6 +42,10 @@ export interface IElectronAPI {
   loadUserContext: () => Promise<string | null>
   saveUserContext: (content: string) => Promise<void>
   importUserContext: () => Promise<string | null>
+  // C-2: user-context.md 動的更新 (FB-002 #5)
+  injectUserContext: (input: string) => Promise<{ summary: string }>
+  // FB-002 #3: Windowsトースト通知
+  sendNotification?: (title: string, body: string) => Promise<void>
 }
 
 declare global {

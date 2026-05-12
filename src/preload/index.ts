@@ -49,6 +49,8 @@ const api = {
   saveTags: (tags: any[]) => ipcRenderer.invoke('tags:save', tags),
   // C-3: レポート履歴
   listReports: () => ipcRenderer.invoke('reports:list'),
+  // FB-002 #3: Windowsトースト通知
+  sendNotification: (title: string, body: string) => ipcRenderer.invoke('notification:send', title, body),
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

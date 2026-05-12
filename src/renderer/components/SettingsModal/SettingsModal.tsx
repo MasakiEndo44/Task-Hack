@@ -128,7 +128,7 @@ export function SettingsModal({ isOpen, onClose, defaultTimer: propDefaultTimer 
     setIsInjecting(true)
     setInjectionSummary('')
     try {
-      const result = await (window as any).api.injectUserContext(contextInput)
+      const result = await window.api.injectUserContext(contextInput)
       setInjectionSummary(result.summary)
       setContextInput('')
     } catch (e: any) {

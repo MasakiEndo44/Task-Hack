@@ -97,7 +97,7 @@ function buildSystemPrompt(tasks: Task[], clarificationTask?: Task | null, profi
 <!--TU:{"notes":"場所: 会議室B"}-->
 <!--DONE:false-->
 
-### 最終ターン（必要な情報が揃った場合 or「あとで考える」選択後）
+### 最終ターン（必要な情報が揃った場合 or「あとで考える」選択後 or ユーザーが会話を終了した場合）
 確認を締める一言 + 以下のマーカー（省略禁止）:
 <!--QR:[]-->
 <!--TU:{"notes":"[全回答を統合したメモ（5W2Hの回答を全て含める）]","subtasks":[{"title":"最初にやること"},{"title":"次にやること"},{"title":"最後にやること"}]}-->
@@ -108,12 +108,14 @@ function buildSystemPrompt(tasks: Task[], clarificationTask?: Task | null, profi
 - 各サブタスクは「着手の足がかりになる具体的な一手」にすること
 - 例：発注タスク → ["発注先担当者に連絡", "注文書を作成・送付", "納期確認メールを送る"]
 
-### その他
-- 口調はEchoらしく自然に（「〜ですね ✈」など）
-- タスク提案のJSONブロック(\`\`\`json)は絶対に出力しないこと。必ず <!--TU:...--> マーカーで既存タスクを更新すること。` : ''
+### 🚫 禁止事項（絶対遵守）
+- あなたは既存のタスクの【詳細追記】と【サブタスク展開】のみを行います。新しいタスクを作成（提案）してはいけません。
+- タスク提案のJSONブロック(\`\`\`json)は**絶対に出力しないでください**。
+- 必ず \`<!--TU:...-->\` マーカーだけを使って既存タスクを更新してください。
+- 口調はEchoらしく自然に（「〜ですね ✈」など）` : ''
 
   const taskGenerationSection = !clarificationTask ? `
-【タスク提案の判断基準】
+[タスク提案の判断基準]
 - ユーザーのメッセージに期限・作業内容が明示されている → 即座に全タスクを提案する（質問不要）
 - 画像が添付されている場合 → 画像の内容を読み取り、確認なしに即タスク提案する
 - 期限や内容が不明な場合 → 一つだけ確認してから提案する
@@ -139,6 +141,7 @@ function buildSystemPrompt(tasks: Task[], clarificationTask?: Task | null, profi
 - scheduledStart は着手推奨日時（ISO 8601形式）。期限から逆算して今日〜明日を目安に設定
 - subtasks は着手の足がかりになる手順を最大3件。省略可
 - notes は補足情報や注意点を一言で。省略可
+- dependsOnId は前提タスクのID（例: "FS0012"）。このタスクの前に完了すべきタスクがある場合のみ設定。省略可
 
 \`\`\`json
 {
@@ -152,11 +155,17 @@ function buildSystemPrompt(tasks: Task[], clarificationTask?: Task | null, profi
         {"title": "最初にやること"},
         {"title": "次にやること"}
       ],
-      "notes": "補足メモ（任意）"
+      "notes": "補足メモ（任意）",
+      "dependsOnId": "FS0012"
     }
   ]
 }
 \`\`\`
+
+【依存関係の判断ルール】
+- 「〜が終わってから」「〜の後に」という文脈があれば dependsOnId を設定する
+- 現在のタスクボード（ACTIVE/NEXT/HOLDING）のタスクIDを参照すること
+- 依存元がボードに存在しない場合は dependsOnId を省略する
 ` : ''
 
   const userContextSection = userContext
