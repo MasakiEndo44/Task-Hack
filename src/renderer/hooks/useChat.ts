@@ -98,10 +98,15 @@ function buildSystemPrompt(tasks: Task[], clarificationTask?: Task | null, profi
 <!--DONE:false-->
 
 ### 最終ターン（必要な情報が揃った場合 or「あとで考える」選択後）
-確認を締める一言 + 以下のマーカー:
+確認を締める一言 + 以下のマーカー（省略禁止）:
 <!--QR:[]-->
-<!--TU:{"notes":"[全回答を統合したメモ]","subtasks":[{"title":"手順1"},{"title":"手順2"}]}-->
+<!--TU:{"notes":"[全回答を統合したメモ（5W2Hの回答を全て含める）]","subtasks":[{"title":"最初にやること"},{"title":"次にやること"},{"title":"最後にやること"}]}-->
 <!--DONE:true-->
+
+### サブタスク生成ルール（最重要）
+- 最終ターンでは必ず subtasks を 1〜3 件生成すること（省略禁止）
+- 各サブタスクは「着手の足がかりになる具体的な一手」にすること
+- 例：発注タスク → ["発注先担当者に連絡", "注文書を作成・送付", "納期確認メールを送る"]
 
 ### その他
 - 口調はEchoらしく自然に（「〜ですね ✈」など）
@@ -281,7 +286,16 @@ export function useChat(tasks: Task[], onUpdateTask?: (taskId: string, updates: 
 
           // TUマーカーによる明示的な更新
           if (taskUpdates && Object.keys(taskUpdates).length > 0 && onUpdateTask) {
-            onUpdateTask(ctask.id, taskUpdates as Partial<Task>)
+            // AIが返す subtasks は {title} のみの配列なので、id と completed を補完する
+            const normalized: Partial<Task> = { ...taskUpdates as Partial<Task> }
+            if (Array.isArray((taskUpdates as any).subtasks)) {
+              normalized.subtasks = ((taskUpdates as any).subtasks as { title: string }[]).map((st) => ({
+                id: 'st-' + Math.random().toString(36).substring(2, 9),
+                title: st.title,
+                completed: false,
+              }))
+            }
+            onUpdateTask(ctask.id, normalized)
           }
 
           // DONEまたは3回答達成 → フォールバック更新 + セッション終了
