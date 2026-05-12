@@ -28,7 +28,18 @@ export function startScheduler(
   scheduledTask = cron.schedule(schedule, async () => {
     console.log('[Scheduler] 週次スイープを開始します:', new Date().toISOString())
     const latestSettings = await onSettingsRefresh()
-    await runSweep(latestSettings)
+    const result = await runSweep(latestSettings)
+    // スケジューラー起動中のスイープ完了後、次回起動時にレポートを表示するため保存
+    if (result?.reportMd) {
+      const dataDir = join(app.getPath('home'), '.task-hack')
+      const reportFile = join(dataDir, 'pending-sweep-report.json')
+      await fs.mkdir(dataDir, { recursive: true })
+      await fs.writeFile(reportFile, JSON.stringify({
+        weekLabel: result.weekLabel ?? '',
+        taskCount: result.taskCount ?? 0,
+        reportMd: result.reportMd,
+      }), 'utf-8').catch(() => {})
+    }
   })
 
   console.log(`[Scheduler] スケジュール設定完了: ${schedule}`)

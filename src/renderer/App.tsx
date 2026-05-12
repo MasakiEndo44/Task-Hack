@@ -224,6 +224,8 @@ function App(): React.JSX.Element {
       : messages[event]
     injectEchoMessageRef.current?.(text)
     setIsChatOpen(true)
+    // Windows トースト通知 (FB-002 #3)
+    window.api.sendNotification?.('Echo AI ✈', text)
   }, [])
 
   // 優先度提案

@@ -13,6 +13,7 @@ interface ProposedTask {
   scheduledStart?: string
   subtasks?: ProposedSubtask[]
   notes?: string
+  dependsOnId?: string
 }
 
 interface ProposedPayload {
@@ -81,6 +82,7 @@ export const TaskProposal: React.FC<TaskProposalProps> = ({ taskStr, onApprove }
     estimatedTime: t.estimatedMinutes,
     scheduledStart: t.scheduledStart,
     notes: t.notes,
+    dependsOn: t.dependsOnId || undefined,
     subtasks: t.subtasks?.map((st, i) => ({
       id: `st-${Date.now()}-${i}`,
       title: st.title,
@@ -147,6 +149,9 @@ export const TaskProposal: React.FC<TaskProposalProps> = ({ taskStr, onApprove }
                   )}
                   {t.notes && (
                     <div className={styles.notes}>💬 {t.notes}</div>
+                  )}
+                  {t.dependsOnId && (
+                    <div className={styles.notes}>🔗 前提: {t.dependsOnId}</div>
                   )}
                 </div>
               )}

@@ -2,7 +2,7 @@
 // through proxies that present self-signed certificates.
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0'
 
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, Notification } from 'electron'
 import { join } from 'path'
 import fs from 'fs/promises'
 import { is } from '@electron-toolkit/utils'
@@ -229,6 +229,13 @@ app.whenReady().then(async () => {
   ipcMain.handle('priority:suggest', async (_, tasks) => {
     const s = await loadCurrentSettings()
     return suggestPriority(s.openAiApiKey ?? '', tasks)
+  })
+
+  // Windowsトースト通知 (FB-002 #3)
+  ipcMain.handle('notification:send', (_event, title: string, body: string) => {
+    if (Notification.isSupported()) {
+      new Notification({ title, body, silent: false }).show()
+    }
   })
 
   // C-1: タグ管理
