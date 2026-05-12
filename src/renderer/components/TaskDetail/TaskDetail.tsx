@@ -133,7 +133,7 @@ export function TaskDetail({ task, allTasks = [], tags = [], onUpdate, onDelete,
   // タグ関連
   const [tagInput, setTagInput] = useState('')
   const [showTagInput, setShowTagInput] = useState(false)
-  const [selectedColor, setSelectedColor] = useState(TAG_COLORS[0])
+  const [selectedColor, setSelectedColor] = useState<string>(TAG_COLORS[0])
   const tagInputRef = useRef<HTMLInputElement>(null)
 
   const assignedTagIds = task.tagIds ?? []
