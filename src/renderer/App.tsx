@@ -126,6 +126,14 @@ function App(): React.JSX.Element {
             const fresh = await window.api.loadTasks().catch(() => null)
             if (fresh) dispatch({ type: 'INIT_TASKS', payload: { tasks: fresh } })
           }
+          // 手動スイープ後もレポートオーバーレイを表示する (FB-005)
+          if (status.reportMd) {
+            setPendingReport({
+              weekLabel: status.weekLabel ?? '',
+              taskCount: status.taskCount ?? 0,
+              reportMd: status.reportMd,
+            })
+          }
           setTimeout(() => setSweepStatus(null), 4000)
         }
       })
