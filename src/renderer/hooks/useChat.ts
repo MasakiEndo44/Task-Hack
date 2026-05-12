@@ -279,45 +279,64 @@ export function useChat(tasks: Task[], onUpdateTask?: (taskId: string, updates: 
         window.api.offChatListeners()
         const ctask = clarificationTaskRef.current
         if (!ctask) return
+
+        // state updater の外で最終メッセージを参照するための ref 変数
+        let pendingTaskUpdates: Partial<Task> | null = null
+        let pendingFallbackNotes: string | null = null
+        let shouldEndSession = false
+
         setMessages(prev => {
           const last = prev[prev.length - 1]
           if (last?.role !== 'assistant') return prev
           const { taskUpdates, done } = parseAssistantMarkers(last.content)
 
-          // TUマーカーによる明示的な更新
-          if (taskUpdates && Object.keys(taskUpdates).length > 0 && onUpdateTask) {
-            // AIが返す subtasks は {title} のみの配列なので、id と completed を補完する
-            const normalized: Partial<Task> = { ...taskUpdates as Partial<Task> }
-            if (Array.isArray((taskUpdates as any).subtasks)) {
-              normalized.subtasks = ((taskUpdates as any).subtasks as { title: string }[]).map((st) => ({
-                id: 'st-' + Math.random().toString(36).substring(2, 9),
-                title: st.title,
+          // TUマーカーの内容を正規化して外部変数にセット（副作用は後で実行）
+          if (taskUpdates && Object.keys(taskUpdates).length > 0) {
+            const normalized: Partial<Task> = {}
+            // subtasks 以外のフィールドをコピー
+            for (const [key, val] of Object.entries(taskUpdates)) {
+              if (key !== 'subtasks') (normalized as Record<string, unknown>)[key] = val
+            }
+            // subtasks を正規化（{title} のみ → {id, title, completed}）
+            const rawSubs = (taskUpdates as any).subtasks
+            if (Array.isArray(rawSubs) && rawSubs.length > 0) {
+              let counter = Date.now()
+              normalized.subtasks = rawSubs.map((st: unknown) => ({
+                id: `st-${(counter++).toString(36)}`,
+                title: typeof st === 'string' ? st : ((st as any).title ?? ''),
                 completed: false,
               }))
             }
-            onUpdateTask(ctask.id, normalized)
+            pendingTaskUpdates = normalized
           }
 
-          // DONEまたは3回答達成 → フォールバック更新 + セッション終了
-          const shouldEnd = done === true || clarificationAnswerCountRef.current >= 3
-          if (shouldEnd) {
-            // TUで notes が更新されていない場合、収集した回答を notes に書き込む
+          // DONEまたは3回答達成 → セッション終了フラグを立てる
+          shouldEndSession = done === true || clarificationAnswerCountRef.current >= 3
+          if (shouldEndSession) {
             const hasNotesUpdate = taskUpdates && 'notes' in taskUpdates
-            if (!hasNotesUpdate && onUpdateTask) {
+            if (!hasNotesUpdate) {
               const answers = prev
                 .slice(clarificationStartIndexRef.current)
                 .filter(m => m.role === 'user' && !m.isSystemTrigger)
                 .map(m => m.content)
-              if (answers.length > 0) {
-                onUpdateTask(ctask.id, { notes: answers.join(' / ') })
-              }
+              if (answers.length > 0) pendingFallbackNotes = answers.join(' / ')
             }
-            setClarificationTask(null)
-            clarificationTaskRef.current = null
-            clarificationAnswerCountRef.current = 0
           }
           return prev
         })
+
+        // 副作用は state updater の外で1回だけ実行する
+        if (pendingTaskUpdates && onUpdateTask) {
+          onUpdateTask(ctask.id, pendingTaskUpdates)
+        }
+        if (pendingFallbackNotes && onUpdateTask) {
+          onUpdateTask(ctask.id, { notes: pendingFallbackNotes })
+        }
+        if (shouldEndSession) {
+          setClarificationTask(null)
+          clarificationTaskRef.current = null
+          clarificationAnswerCountRef.current = 0
+        }
       })
 
       window.api.onChatError((msg) => {
