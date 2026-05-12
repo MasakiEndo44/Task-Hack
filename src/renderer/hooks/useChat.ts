@@ -98,10 +98,15 @@ function buildSystemPrompt(tasks: Task[], clarificationTask?: Task | null, profi
 <!--DONE:false-->
 
 ### 最終ターン（必要な情報が揃った場合 or「あとで考える」選択後）
-確認を締める一言 + 以下のマーカー:
+確認を締める一言 + 以下のマーカー（省略禁止）:
 <!--QR:[]-->
-<!--TU:{"notes":"[全回答を統合したメモ]","subtasks":[{"title":"手順1"},{"title":"手順2"}]}-->
+<!--TU:{"notes":"[全回答を統合したメモ（5W2Hの回答を全て含める）]","subtasks":[{"title":"最初にやること"},{"title":"次にやること"},{"title":"最後にやること"}]}-->
 <!--DONE:true-->
+
+### サブタスク生成ルール（最重要）
+- 最終ターンでは必ず subtasks を 1〜3 件生成すること（省略禁止）
+- 各サブタスクは「着手の足がかりになる具体的な一手」にすること
+- 例：発注タスク → ["発注先担当者に連絡", "注文書を作成・送付", "納期確認メールを送る"]
 
 ### その他
 - 口調はEchoらしく自然に（「〜ですね ✈」など）
@@ -274,36 +279,64 @@ export function useChat(tasks: Task[], onUpdateTask?: (taskId: string, updates: 
         window.api.offChatListeners()
         const ctask = clarificationTaskRef.current
         if (!ctask) return
+
+        // state updater の外で最終メッセージを参照するための ref 変数
+        let pendingTaskUpdates: Partial<Task> | null = null
+        let pendingFallbackNotes: string | null = null
+        let shouldEndSession = false
+
         setMessages(prev => {
           const last = prev[prev.length - 1]
           if (last?.role !== 'assistant') return prev
           const { taskUpdates, done } = parseAssistantMarkers(last.content)
 
-          // TUマーカーによる明示的な更新
-          if (taskUpdates && Object.keys(taskUpdates).length > 0 && onUpdateTask) {
-            onUpdateTask(ctask.id, taskUpdates as Partial<Task>)
+          // TUマーカーの内容を正規化して外部変数にセット（副作用は後で実行）
+          if (taskUpdates && Object.keys(taskUpdates).length > 0) {
+            const normalized: Partial<Task> = {}
+            // subtasks 以外のフィールドをコピー
+            for (const [key, val] of Object.entries(taskUpdates)) {
+              if (key !== 'subtasks') (normalized as Record<string, unknown>)[key] = val
+            }
+            // subtasks を正規化（{title} のみ → {id, title, completed}）
+            const rawSubs = (taskUpdates as any).subtasks
+            if (Array.isArray(rawSubs) && rawSubs.length > 0) {
+              let counter = Date.now()
+              normalized.subtasks = rawSubs.map((st: unknown) => ({
+                id: `st-${(counter++).toString(36)}`,
+                title: typeof st === 'string' ? st : ((st as any).title ?? ''),
+                completed: false,
+              }))
+            }
+            pendingTaskUpdates = normalized
           }
 
-          // DONEまたは3回答達成 → フォールバック更新 + セッション終了
-          const shouldEnd = done === true || clarificationAnswerCountRef.current >= 3
-          if (shouldEnd) {
-            // TUで notes が更新されていない場合、収集した回答を notes に書き込む
+          // DONEまたは3回答達成 → セッション終了フラグを立てる
+          shouldEndSession = done === true || clarificationAnswerCountRef.current >= 3
+          if (shouldEndSession) {
             const hasNotesUpdate = taskUpdates && 'notes' in taskUpdates
-            if (!hasNotesUpdate && onUpdateTask) {
+            if (!hasNotesUpdate) {
               const answers = prev
                 .slice(clarificationStartIndexRef.current)
                 .filter(m => m.role === 'user' && !m.isSystemTrigger)
                 .map(m => m.content)
-              if (answers.length > 0) {
-                onUpdateTask(ctask.id, { notes: answers.join(' / ') })
-              }
+              if (answers.length > 0) pendingFallbackNotes = answers.join(' / ')
             }
-            setClarificationTask(null)
-            clarificationTaskRef.current = null
-            clarificationAnswerCountRef.current = 0
           }
           return prev
         })
+
+        // 副作用は state updater の外で1回だけ実行する
+        if (pendingTaskUpdates && onUpdateTask) {
+          onUpdateTask(ctask.id, pendingTaskUpdates)
+        }
+        if (pendingFallbackNotes && onUpdateTask) {
+          onUpdateTask(ctask.id, { notes: pendingFallbackNotes })
+        }
+        if (shouldEndSession) {
+          setClarificationTask(null)
+          clarificationTaskRef.current = null
+          clarificationAnswerCountRef.current = 0
+        }
       })
 
       window.api.onChatError((msg) => {
