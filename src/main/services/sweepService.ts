@@ -82,7 +82,9 @@ export async function runSweep(settings: AppSettings): Promise<void> {
     sendProgress({
       phase: 'done',
       taskCount: clearedTasks.length,
-      message: `${clearedTasks.length}件のフライトが無事着陸しました。お疲れさまでした 🛬`
+      message: `${clearedTasks.length}件のフライトが無事着陸しました。お疲れさまでした 🛬`,
+      reportMd: reportResult?.reportMd ?? '',
+      weekLabel,
     })
 
   } catch (err: any) {
